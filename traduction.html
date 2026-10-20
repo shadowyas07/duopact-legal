@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DuoPact — Traduis l'app en darija</title>
+<meta name="description" content="Aide à traduire DuoPact en darija, gagne des points et ton nom dans l'application.">
+<meta name="theme-color" content="#0A0A1F">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { max-width: 860px; }
+  [hidden] { display: none !important; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px;
+         border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+         font: 600 15px/1.2 inherit; cursor: pointer; transition: transform .12s, filter .15s; }
+  .btn:hover { filter: brightness(1.12); }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .5; cursor: default; filter: none; transform: none; }
+  .btn.primary { color: #fff; border: 0; background: linear-gradient(90deg, #6366F1, #9333EA); }
+  .btn.green { color: #04261C; border: 0; background: linear-gradient(90deg, #2EE6A6, #22D3EE); }
+  .btn.small { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+  .muted { color: var(--muted); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .grow { flex: 1; }
+
+  /* En-tête du jeu */
+  .progress { height: 12px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; border-radius: 99px;
+                background: linear-gradient(90deg, #22D3EE, #C084FC, #F472B6); transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .reward { display: grid; grid-template-columns: 52px 1fr; gap: 14px; align-items: center; }
+  .reward .ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+                 background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(192,132,252,.25)); }
+  .reward .ico svg { width: 28px; height: 28px; color: #C084FC; }
+
+  .me { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .me .lvl { font-size: 13px; color: var(--muted); }
+  .me > .grow { min-width: 240px; } /* sur téléphone, les statistiques passent sous le score */
+  .score { font-size: 30px; font-weight: 800; line-height: 1; background: linear-gradient(90deg, #22D3EE, #C084FC);
+           -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge2 { font-size: 12px; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+  .badge2.on { color: #fff; border-color: transparent; background: linear-gradient(90deg, #6366F1, #9333EA); }
+
+  .tabs { display: flex; gap: 6px; margin: 18px 0 12px; flex-wrap: wrap; }
+  .tab { padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: transparent;
+         color: var(--muted); font: 600 14px inherit; cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--text); background: var(--surface); }
+
+  /* Carte à traduire */
+  .play { position: relative; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
+          color: #22D3EE; background: rgba(34,211,238,.12); }
+  .fr { font-size: 21px; line-height: 1.45; margin: 12px 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .hint { font-size: 13px; color: var(--muted); }
+  textarea.dar { width: 100%; min-height: 96px; margin-top: 14px; padding: 14px; border-radius: 14px; font: 20px/1.6 inherit;
+                 border: 1px solid var(--border); background: rgba(0,0,0,.18); color: var(--text); resize: vertical; }
+  textarea.dar:focus { outline: 2px solid #C084FC; outline-offset: 1px; }
+  .tokens { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .token { font: 600 13px ui-monospace, monospace; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+           border: 1px dashed rgba(255,185,56,.6); background: rgba(255,185,56,.08); color: #FFB938; }
+  .others { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .warn { color: #FFB938; font-size: 13px; margin-top: 8px; }
+  .pop { position: absolute; right: 24px; top: 18px; font-weight: 800; font-size: 22px; color: #2EE6A6;
+         pointer-events: none; animation: pop 1s ease-out forwards; }
+  @keyframes pop { 0% { opacity: 0; transform: translateY(10px) scale(.8); } 20% { opacity: 1; transform: none; }
+                   100% { opacity: 0; transform: translateY(-36px); } }
+  .slide { animation: slide .35s cubic-bezier(.2,.8,.2,1); }
+  @keyframes slide { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+  .combo { font-size: 13px; font-weight: 700; color: #F472B6; }
+
+  /* Vote */
+  .choice { display: block; width: 100%; text-align: right; direction: rtl; margin-top: 8px; padding: 14px 16px;
+            border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+            font: 19px/1.5 inherit; cursor: pointer; }
+  .choice:hover { border-color: #C084FC; }
+
+  /* Classement */
+  .rank { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 4px;
+          border-bottom: 1px solid var(--border); }
+  .rank:last-child { border-bottom: 0; }
+  .pos { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 800;
+         background: rgba(255,255,255,.06); }
+  .pos.g1 { background: linear-gradient(135deg, #FFD36E, #FFB938); color: #3a2600; }
+  .pos.g2 { background: linear-gradient(135deg, #E6E8F2, #A9AEC8); color: #1b1d2a; }
+  .pos.g3 { background: linear-gradient(135deg, #F2B48A, #C9764A); color: #2b1306; }
+  .rank.you { background: rgba(192,132,252,.08); border-radius: 12px; }
+  .pts { font-weight: 800; }
+  input.name { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border);
+               background: rgba(0,0,0,.18); color: var(--text); font: 16px inherit; }
+  label.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-top: 12px; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+           padding: 10px 16px; border-radius: 12px; z-index: 50; background: #1F1E42; color: #F3F1FF;
+           border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .confetti { position: fixed; top: -10px; width: 8px; height: 14px; z-index: 60; pointer-events: none;
+              animation: fall 2.2s linear forwards; }
+  @keyframes fall { to { transform: translateY(105vh) rotate(720deg); opacity: .2; } }
+  @media (prefers-reduced-motion: reduce) { .slide, .pop, .confetti { animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="logo.svg" alt=""><span>DuoPact · Traduction</span></a>
+    <div class="nav"><button class="btn small" id="signOut" hidden>Se déconnecter</button></div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="badge">Mission communauté</div>
+    <h1>Traduis DuoPact en darija</h1>
+    <p class="lead">Une phrase à la fois, à ton rythme. Chaque traduction te rapporte des points, et les contributeurs
+      sont remerciés par leur nom dans l'application.</p>
+  </section>
+
+  <section class="card">
+    <div class="row"><strong class="grow">Avancement de la communauté</strong><span id="globalTxt" class="muted">…</span></div>
+    <div class="progress" style="margin-top:10px" role="progressbar" aria-label="Avancement" id="globalBar"><i id="globalFill"></i></div>
+  </section>
+
+  <section class="card reward">
+    <div class="ico"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19,5h-2V3H7v2H5C3.9,5 3,5.9 3,7v1c0,2.55 1.92,4.63 4.39,4.94 0.63,1.5 1.98,2.63 3.61,2.96V19H7v2h10v-2h-4v-3.1c1.63,-0.33 2.98,-1.46 3.61,-2.96C19.08,12.63 21,10.55 21,8V7C21,5.9 20.1,5 19,5zM5,8V7h2v3.82C5.84,10.4 5,9.3 5,8zM19,8c0,1.3 -0.84,2.4 -2,2.82V7h2V8z"/></svg></div>
+    <div>
+      <strong>Ta récompense</strong>
+      <p class="muted" style="margin:4px 0 0">Ton nom apparaîtra dans l'écran « Traduit par » de l'application et dans la description
+        de DuoPact sur le Play Store. Les trois premiers du classement seront mis en avant.</p>
+    </div>
+  </section>
+
+  <!-- Connexion -->
+  <section class="card" id="loginView" hidden>
+    <h2>Rejoindre la mission</h2>
+    <p class="muted">Connecte-toi avec ton compte Google pour enregistrer tes traductions et tes points.</p>
+    <button class="btn primary" id="signIn">Se connecter avec Google</button>
+    <p class="warn" id="loginError" hidden></p>
+  </section>
+
+  <!-- Profil (premier passage) -->
+  <section class="card" id="profileView" hidden>
+    <h2>Comment veux-tu être remercié ?</h2>
+    <label for="nameInput" class="muted">Nom affiché dans le classement et dans l'application</label>
+    <input class="name" id="nameInput" maxlength="40" autocomplete="nickname">
+    <label class="check"><input type="checkbox" id="creditInput" checked>
+      <span>J'accepte que ce nom apparaisse dans l'application DuoPact et sur le Play Store.</span></label>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="saveProfile">C'est parti</button></div>
+  </section>
+
+  <!-- Jeu -->
+  <section id="gameView" hidden>
+    <div class="card me">
+      <div><div class="score" id="myScore">0</div><div class="lvl" id="myLevel">Niveau 1</div></div>
+      <div class="grow">
+        <div class="row"><span class="muted grow" id="myStats"></span><button class="btn small" id="editProfile">Mon nom</button></div>
+        <div class="progress" style="margin-top:8px"><i id="levelFill"></i></div>
+        <div class="badges" id="badges" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="play" aria-selected="true">Traduire</button>
+      <button class="tab" role="tab" data-tab="vote">Voter<span class="combo" id="voteCount"></span></button>
+      <button class="tab" role="tab" data-tab="board">Classement</button>
+    </div>
+
+    <div id="playTab"></div>
+    <div id="voteTab" hidden></div>
+    <div id="boardTab" hidden></div>
+
+    <div class="card" id="adminBox" hidden>
+      <h2>Espace éditeur</h2>
+      <p class="muted">Télécharge les traductions retenues (la plus votée par phrase) et la liste des contributeurs.</p>
+      <div class="row"><button class="btn" id="exportCsv">Traductions (CSV)</button><button class="btn" id="exportCredits">Remerciements (texte)</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Les règles</h2>
+    <ul>
+      <li>Écris en <strong>lettres arabes</strong>, sur un ton familier, comme entre potes.</li>
+      <li>Les mots entre <strong>{ }</strong> sont remplacés par l'application (un prénom, une durée…) : garde-les tels quels. Touche-les pour les insérer.</li>
+      <li>Les boutons et titres doivent rester <strong>courts</strong>.</li>
+      <li>Points : <strong>+10</strong> par traduction, <strong>+2</strong> par vote, <strong>+3</strong> chaque fois qu'on vote pour ta traduction.</li>
+      <li>Les traductions hors sujet ou insultantes sont supprimées, avec les points.</li>
+    </ul>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, connectAuthEmulator, signInWithCredential }
+  from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { getFirestore, connectFirestoreEmulator, collection, doc, onSnapshot, setDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+// Les textes de l'application (générés par traductions/build_game.py) : clé stable, écran, texte, conseil.
+const STRINGS = [{"k": "9a97e1abb6", "screen": "Démarrage", "fr": "Restez concentrés, ensemble.", "hint": "", "ref": "activity_splash.xml:45"}, {"k": "807c20217b", "screen": "Connexion", "fr": "Connexion…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:49"}, {"k": "0b3738a41c", "screen": "Connexion", "fr": "Création du compte…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:66"}, {"k": "fbefc1b3bc", "screen": "Connexion", "fr": "Compte créé ! Lie-toi maintenant à ton pote.", "hint": "", "ref": "AuthActivity.kt:72"}, {"k": "fedf2439f2", "screen": "Connexion", "fr": "Se connecter", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:92"}, {"k": "dd9f915122", "screen": "Connexion", "fr": "Créer un compte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:93"}, {"k": "f7ad7e970b", "screen": "Connexion", "fr": "Ton nom doit faire au moins 2 caractères (lettres, chiffres, . _ -).", "hint": "", "ref": "AuthActivity.kt:106"}, {"k": "d15e305329", "screen": "Connexion", "fr": "Ton nom doit faire au plus 40 caractères.", "hint": "", "ref": "AuthActivity.kt:110"}, {"k": "5842e2abec", "screen": "Connexion", "fr": "Le mot de passe doit faire au moins 6 caractères.", "hint": "", "ref": "AuthActivity.kt:114"}, {"k": "2f49e3596e", "screen": "Connexion", "fr": "Erreur inconnue.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:122"}, {"k": "3f0c9c9838", "screen": "Connexion", "fr": "Ce nom est déjà pris.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AuthActivity.kt:124"}, {"k": "f0c99e3ea0", "screen": "Connexion", "fr": "Nom ou mot de passe incorrect.", "hint": "", "ref": "AuthActivity.kt:129"}, {"k": "f3164b0956", "screen": "Connexion", "fr": "Pas de connexion internet.", "hint": "", "ref": "AuthActivity.kt:131"}, {"k": "0c85868f7a", "screen": "Connexion", "fr": "Trop de tentatives, réessaie dans quelques minutes.", "hint": "", "ref": "AuthActivity.kt:133"}, {"k": "dcffda5fe4", "screen": "Connexion", "fr": "Moins d'écran, à deux.\nConnecte-toi pour continuer.", "hint": "Garde les retours à la ligne", "ref": "activity_auth.xml:39"}, {"k": "09875e47cb", "screen": "Connexion", "fr": "Nom d'utilisateur", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_auth.xml:48"}, {"k": "2a55f15f33", "screen": "Connexion", "fr": "ex. alex", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_auth.xml:56"}, {"k": "94e2f3ee14", "screen": "Connexion", "fr": "Mot de passe", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_auth.xml:68"}, {"k": "db4bc7af9a", "screen": "Connexion", "fr": "6 caractères minimum", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_auth.xml:86"}, {"k": "a5dd65e2f1", "screen": "Connexion", "fr": "En créant un compte, tu acceptes la politique de confidentialité.\nAucune récupération de mot de passe n'est possible : note-le bien, le perdre fait perdre ton compte et ton pacte.", "hint": "Garde les retours à la ligne", "ref": "activity_auth.xml:128"}, {"k": "6c6f3fa161", "screen": "Connexion", "fr": "Lire la politique de confidentialité", "hint": "", "ref": "activity_auth.xml:136"}, {"k": "824881132a", "screen": "Liaison avec le pote", "fr": "Recherche de ton duo…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:79"}, {"k": "8cef1f1d4b", "screen": "Liaison avec le pote", "fr": "Impossible de vérifier ton duo ({valeur}). Vérifie ta connexion puis réessaie.", "hint": "Garde tels quels : {valeur}", "ref": "PairingActivity.kt:95"}, {"k": "e16e5d8199", "screen": "Liaison avec le pote", "fr": "Code DuoPact", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:104"}, {"k": "cdc3106454", "screen": "Liaison avec le pote", "fr": "Code copié", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:106"}, {"k": "ce4e3498e5", "screen": "Liaison avec le pote", "fr": "Génération…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:111"}, {"k": "69eca75f70", "screen": "Liaison avec le pote", "fr": "Envoie ce code à ton pote :", "hint": "", "ref": "PairingActivity.kt:118"}, {"k": "41d2f31595", "screen": "Liaison avec le pote", "fr": "Partager le code", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:134"}, {"k": "dda87e830b", "screen": "Liaison avec le pote", "fr": "Générer un code", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:143"}, {"k": "92e07d9362", "screen": "Liaison avec le pote", "fr": "Entre un code à 6 caractères.", "hint": "", "ref": "PairingActivity.kt:152"}, {"k": "56f4178486", "screen": "Liaison avec le pote", "fr": "Connexion au duo…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:156"}, {"k": "3bf64993f1", "screen": "Liaison avec le pote", "fr": "Rejoindre", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingActivity.kt:165"}, {"k": "34590b9fec", "screen": "Liaison avec le pote", "fr": "Toujours impossible ({valeur}). Touche ici pour réessayer.", "hint": "Garde tels quels : {valeur}", "ref": "PairingActivity.kt:215"}, {"k": "63e30e5c1e", "screen": "Liaison avec le pote", "fr": "\n\nTouche ici pour réessayer.", "hint": "Garde les retours à la ligne", "ref": "PairingActivity.kt:219"}, {"k": "09dcb1ede6", "screen": "Liaison avec le pote", "fr": "Impossible de générer un code, réessaie.", "hint": "", "ref": "PairingRepository.kt:45"}, {"k": "5f879cfa58", "screen": "Liaison avec le pote", "fr": "Code invalide", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PairingRepository.kt:86"}, {"k": "b4814db32f", "screen": "Liaison avec le pote", "fr": "Ce code a déjà été utilisé", "hint": "", "ref": "PairingRepository.kt:89"}, {"k": "6a7d001d92", "screen": "Liaison avec le pote", "fr": "Tu ne peux pas rejoindre ton propre code", "hint": "", "ref": "PairingRepository.kt:91"}, {"k": "4250c02c38", "screen": "Liaison avec le pote", "fr": "Ce code a expiré, demande-en un nouveau", "hint": "", "ref": "PairingRepository.kt:94"}, {"k": "de380de7d4", "screen": "Liaison avec le pote", "fr": "Lie-toi à ton pote", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_pairing.xml:30"}, {"k": "2737268a31", "screen": "Liaison avec le pote", "fr": "L'un de vous génère un code, l'autre le saisit.\nVous n'aurez à le faire qu'une fois.", "hint": "Garde les retours à la ligne", "ref": "activity_pairing.xml:37"}, {"k": "33265d456d", "screen": "Liaison avec le pote", "fr": "Inviter mon pote", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_pairing.xml:63"}, {"k": "56c1ee3c15", "screen": "Liaison avec le pote", "fr": "Génère un code et envoie-le à ton pote.", "hint": "", "ref": "activity_pairing.xml:70"}, {"k": "0d4f818a12", "screen": "Liaison avec le pote", "fr": "Toucher pour copier · valable 24 h", "hint": "", "ref": "activity_pairing.xml:108"}, {"k": "aa87db8a30", "screen": "Liaison avec le pote", "fr": "En attente de ton pote…", "hint": "", "ref": "activity_pairing.xml:132"}, {"k": "708d353a6e", "screen": "Liaison avec le pote", "fr": "J'ai reçu un code", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_pairing.xml:193"}, {"k": "85c3cb0fcd", "screen": "Autorisations", "fr": "Tout est prêt !", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:71"}, {"k": "c40ef1c322", "screen": "Autorisations", "fr": "{nombre} / 3 autorisations accordées", "hint": "Garde tels quels : {nombre}", "ref": "PermissionsActivity.kt:71"}, {"k": "a9cfe9999d", "screen": "Autorisations", "fr": "Statistiques d'utilisation", "hint": "", "ref": "PermissionsActivity.kt:80"}, {"k": "5df5e49e75", "screen": "Autorisations", "fr": "Pour mesurer précisément le temps passé sur chaque application.", "hint": "", "ref": "PermissionsActivity.kt:81"}, {"k": "19c7b025b4", "screen": "Autorisations", "fr": "Détecte à l'instant quelle application s'ouvre pour la bloquer quand la limite est atteinte. DuoPact ne lit PAS le contenu de ton écran et n'envoie rien d'autre que ton temps d'utilisation à ton pote.\n\nDans la liste, choisis DuoPact puis active-le. Si l'option est grisée : Infos de l'application, menu en haut à droite, puis « Autoriser les paramètres restreints ».", "hint": "Garde les retours à la ligne · Les « » désignent un réglage ou un bouton du téléphone", "ref": "PermissionsActivity.kt:88"}, {"k": "ca731ac6f3", "screen": "Autorisations", "fr": "Ouvrir les réglages", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:93"}, {"k": "094254da22", "screen": "Autorisations", "fr": "Pour te prévenir quand ton pote demande un déblocage (recommandé).", "hint": "", "ref": "PermissionsActivity.kt:99"}, {"k": "129ffff9f5", "screen": "Autorisations", "fr": "Continuer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:119"}, {"k": "12a3f8d445", "screen": "Autorisations", "fr": "Infos de l'application", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:132"}, {"k": "e12171f3a8", "screen": "Autorisations", "fr": "Service d'accessibilité : à lire avant d'activer", "hint": "", "ref": "PermissionsActivity.kt:150"}, {"k": "16f414b165", "screen": "Autorisations", "fr": "DuoPact utilise le service d'accessibilité d'Android pour une seule chose : savoir quelle application passe au premier plan, afin d'afficher un écran de blocage quand la limite fixée avec ton pote est atteinte, et te renvoyer à l'écran d'accueil.\n\nCe que DuoPact fait : détecter le nom de l'application ouverte ; afficher l'écran de blocage.\n\nCe que DuoPact ne fait PAS : lire le contenu de ton écran, ce que tu écris, tes messages ou tes mots de passe ; agir à ta place dans les applications.\n\nCe qui est partagé avec ton pote : le temps passé sur les applications du pacte et l'état (actif ou non) de ta protection. Jamais le contenu.\n\nTu peux désactiver ce service à tout moment dans les réglages d'accessibilité ; ton pote verra alors que ta protection est coupée.", "hint": "Garde les retours à la ligne", "ref": "PermissionsActivity.kt:152"}, {"k": "b22011d154", "screen": "Autorisations", "fr": "J'accepte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:165"}, {"k": "240772e589", "screen": "Autorisations", "fr": "Autorisé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:189"}, {"k": "15406658fb", "screen": "Autorisations", "fr": "À activer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "PermissionsActivity.kt:189"}, {"k": "a66572b4fe", "screen": "Autorisations", "fr": "Dernières autorisations", "hint": "", "ref": "activity_permissions.xml:11"}, {"k": "957d0290b2", "screen": "Autorisations", "fr": "Pour que le blocage soit réel, DuoPact a besoin de ces accès.", "hint": "", "ref": "activity_permissions.xml:20"}, {"k": "508361e2be", "screen": "Batterie", "fr": "Sur Xiaomi : active aussi « Démarrage automatique » et mets l'économiseur sur « Aucune restriction ».", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:44"}, {"k": "8a6ca220fb", "screen": "Batterie", "fr": "Sur Samsung : retire DuoPact des « Applications en veille » (Batterie, puis Limites d'utilisation en arrière-plan).", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:46"}, {"k": "a0e53c97b7", "screen": "Batterie", "fr": "Sur Huawei/Honor : dans « Lancement d'applications », passe DuoPact en gestion manuelle et coche tout.", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:48"}, {"k": "9f865ebd11", "screen": "Batterie", "fr": "Sur ce téléphone : autorise l'« Activité en arrière-plan » et le démarrage automatique de DuoPact.", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:50"}, {"k": "85923c3223", "screen": "Batterie", "fr": "Sur Vivo : autorise la « Consommation élevée en arrière-plan » pour DuoPact.", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:52"}, {"k": "d5fb148e75", "screen": "Batterie", "fr": "Fonctionnement en arrière-plan", "hint": "", "ref": "BatteryHelper.kt:68"}, {"k": "45b1696d7d", "screen": "Batterie", "fr": "Sans restriction", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BatteryHelper.kt:73"}, {"k": "879d6b169d", "screen": "Batterie", "fr": "Optionnel", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BatteryHelper.kt:73"}, {"k": "f5433e7637", "screen": "Batterie", "fr": "Recommandé : sans ça, ton téléphone peut mettre DuoPact en veille pour économiser la batterie. Tu risques alors de rater les demandes de ton pote, et il te verra « Sans nouvelles ». Le blocage, lui, continue de fonctionner.\n\nDans la liste, choisis « Toutes les applications », puis DuoPact et « Ne pas optimiser ».", "hint": "Garde les retours à la ligne · Les « » désignent un réglage ou un bouton du téléphone", "ref": "BatteryHelper.kt:80"}, {"k": "968c60c8e7", "screen": "Batterie", "fr": "Ouvrir les réglages de batterie", "hint": "", "ref": "BatteryHelper.kt:90"}, {"k": "bdb582b74c", "screen": "Batterie", "fr": "Guide pour mon téléphone", "hint": "", "ref": "BatteryHelper.kt:91"}, {"k": "f30ecbf5b1", "screen": "Accueil", "fr": "Bonjour", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:128"}, {"k": "29192c62ee", "screen": "Accueil", "fr": "Bonsoir", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:128"}, {"k": "5515471e4b", "screen": "Accueil", "fr": "Négociation en cours : mets-toi d'accord avec ton pote sur les durées.", "hint": "", "ref": "MainActivity.kt:194"}, {"k": "9ec56d33ad", "screen": "Accueil", "fr": "Aucun pacte actif. Choisis les applications à limiter avec ton pote.", "hint": "", "ref": "MainActivity.kt:196"}, {"k": "7705a26c00", "screen": "Accueil", "fr": "Temps restant aujourd'hui", "hint": "", "ref": "MainActivity.kt:205"}, {"k": "2909d54a8f", "screen": "Accueil", "fr": "Limite : {durée} / jour", "hint": "Garde tels quels : {durée}", "ref": "MainActivity.kt:225"}, {"k": "a579bdc567", "screen": "Accueil", "fr": "Écoulé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:235"}, {"k": "cd07c7fb5f", "screen": "Accueil", "fr": "temps écoulé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:262"}, {"k": "30f3533002", "screen": "Accueil", "fr": " · la plus proche de sa limite", "hint": "", "ref": "MainActivity.kt:264"}, {"k": "470af694a9", "screen": "Accueil", "fr": "1 demande de déblocage à traiter", "hint": "", "ref": "MainActivity.kt:306"}, {"k": "aab2622b2e", "screen": "Accueil", "fr": "{nombre} demandes de déblocage à traiter", "hint": "Garde tels quels : {nombre}", "ref": "MainActivity.kt:307"}, {"k": "e7dd48e02d", "screen": "Accueil", "fr": "Demandes de mon pote", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:314"}, {"k": "86a20f417f", "screen": "Accueil", "fr": "En attente de ses données…", "hint": "", "ref": "MainActivity.kt:326"}, {"k": "ee1930589b", "screen": "Accueil", "fr": "Synchronisé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:339"}, {"k": "e4b3786e64", "screen": "Accueil", "fr": "{durée} utilisé", "hint": "Garde tels quels : {durée} · Texte court (bouton ou titre) : reste court", "ref": "MainActivity.kt:352"}, {"k": "645126bf1e", "screen": "Accueil", "fr": "Pas encore de limites actives.", "hint": "", "ref": "MainActivity.kt:357"}, {"k": "24715ed535", "screen": "Accueil", "fr": "Sa protection est désactivée : le blocage ne s'applique plus de son côté.", "hint": "", "ref": "MainActivity.kt:358"}, {"k": "189ab93f9b", "screen": "Accueil", "fr": "Téléphone éteint, hors-ligne ou app fermée.", "hint": "", "ref": "MainActivity.kt:359"}, {"k": "bc76036d70", "screen": "Accueil", "fr": "Aucune nouvelle depuis {durée}. Tu peux mettre fin au duo depuis l'onglet Duo.", "hint": "Garde tels quels : {durée}", "ref": "MainActivity.kt:362"}, {"k": "245469f3c4", "screen": "Accueil", "fr": "Bonjour !", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_main.xml:52"}, {"k": "b7f7893ad4", "screen": "Accueil", "fr": "Prêt à rester focus avec ton duo ?", "hint": "", "ref": "activity_main.xml:59"}, {"k": "e54ced37eb", "screen": "Accueil", "fr": "Aucune limite active", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_main.xml:146"}, {"k": "48d6384dcc", "screen": "Accueil / Mon duo", "fr": "A modifié l'heure de son téléphone ({durée}) {il y a…}.", "hint": "Garde tels quels : {durée}, {il y a…}", "ref": "UsageSync.kt:52"}, {"k": "c7bd02fe83", "screen": "Accueil / Mon duo", "fr": "Heure réglée manuellement sur son téléphone.", "hint": "", "ref": "UsageSync.kt:56"}, {"k": "58d32b8aad", "screen": "Accueil / Mon duo", "fr": "A changé de fuseau horaire {il y a…}.", "hint": "Garde tels quels : {il y a…}", "ref": "UsageSync.kt:58"}, {"k": "f1702b4686", "screen": "Barre du bas", "fr": "Messages", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BottomNavHelper.kt:59"}, {"k": "a8ff8fd207", "screen": "Barre du bas", "fr": "Accueil", "hint": "Texte court (bouton ou titre) : reste court", "ref": "bottom_nav.xml:14"}, {"k": "3d5f7f805a", "screen": "Barre du bas", "fr": "Applis", "hint": "Texte court (bouton ou titre) : reste court", "ref": "bottom_nav.xml:20"}, {"k": "3c5d9cd033", "screen": "Barre du bas", "fr": "Duo", "hint": "Texte court (bouton ou titre) : reste court", "ref": "bottom_nav.xml:26"}, {"k": "c39c591118", "screen": "Applis / pacte", "fr": "Ton pote", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:35"}, {"k": "8f10b5d1b9", "screen": "Applis / pacte", "fr": "Erreur : {valeur}", "hint": "Garde tels quels : {valeur} · Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:141"}, {"k": "b6c0b559ad", "screen": "Applis / pacte", "fr": "Choix", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:158"}, {"k": "9da8d134b0", "screen": "Applis / pacte", "fr": "Durées", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:158"}, {"k": "7a8e6010a3", "screen": "Applis / pacte", "fr": "Pacte actif", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:158"}, {"k": "71248d44a6", "screen": "Applis / pacte", "fr": "Choisis tes applications", "hint": "", "ref": "AppsActivity.kt:195"}, {"k": "3e601b43d4", "screen": "Applis / pacte", "fr": "Chacun choisit sur son téléphone les applications à limiter. Quand vous aurez tous les deux validé, vos choix sont réunis et vous négociez la durée de chacune.", "hint": "", "ref": "AppsActivity.kt:196"}, {"k": "2cc6c327a5", "screen": "Applis / pacte", "fr": "Validée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:203"}, {"k": "34a5fa4bc7", "screen": "Applis / pacte", "fr": "À valider", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:204"}, {"k": "f1b4886766", "screen": "Applis / pacte", "fr": "Ma sélection", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:207"}, {"k": "6f491cd0cb", "screen": "Applis / pacte", "fr": "Aucune application choisie pour l'instant.", "hint": "", "ref": "AppsActivity.kt:209"}, {"k": "29bb7cd574", "screen": "Applis / pacte", "fr": "Choisir mes applications", "hint": "", "ref": "AppsActivity.kt:221"}, {"k": "0776616330", "screen": "Applis / pacte", "fr": "Modifier ma liste", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:221"}, {"k": "710749a9c9", "screen": "Applis / pacte", "fr": "Valider ma sélection", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:230"}, {"k": "523f1383c5", "screen": "Applis / pacte", "fr": "Modifier ma sélection", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:235"}, {"k": "f8bf364640", "screen": "Applis / pacte", "fr": "En cours…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:246"}, {"k": "cb4b4dcff1", "screen": "Applis / pacte", "fr": "Pas commencé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:247"}, {"k": "f616b4881a", "screen": "Applis / pacte", "fr": "A validé sa sélection ({nombre d'applis}).", "hint": "Garde tels quels : {nombre d'applis}", "ref": "AppsActivity.kt:251"}, {"k": "a8b2e56b1a", "screen": "Applis / pacte", "fr": "Est en train de choisir ({nombre d'applis} pour l'instant).", "hint": "Garde tels quels : {nombre d'applis}", "ref": "AppsActivity.kt:252"}, {"k": "c25b9d6ad7", "screen": "Applis / pacte", "fr": "N'a pas encore choisi d'applications.", "hint": "", "ref": "AppsActivity.kt:253"}, {"k": "351744158a", "screen": "Applis / pacte", "fr": "Mettez-vous d'accord sur les durées", "hint": "", "ref": "AppsActivity.kt:267"}, {"k": "81f06c87b2", "screen": "Applis / pacte", "fr": "Pour chaque application, l'un propose une durée par jour, l'autre l'accepte ou fait une contre-proposition. Ça continue jusqu'à ce que l'un de vous accepte : la durée retenue est toujours choisie par vous deux.", "hint": "", "ref": "AppsActivity.kt:268"}, {"k": "31c5e426a1", "screen": "Applis / pacte", "fr": "\n\n{nombre} / {total} réglée(s).", "hint": "Garde tels quels : {nombre}, {total} · Garde les retours à la ligne", "ref": "AppsActivity.kt:271"}, {"k": "01cba1dfba", "screen": "Applis / pacte", "fr": "Chargement…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:278"}, {"k": "07945cd557", "screen": "Applis / pacte", "fr": "Toi", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:282"}, {"k": "a065a58923", "screen": "Applis / pacte", "fr": "Acceptée par ", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:291"}, {"k": "7c04d58573", "screen": "Applis / pacte", "fr": "D'un commun accord", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:292"}, {"k": "426e35857f", "screen": "Applis / pacte", "fr": "{durée} / jour", "hint": "Garde tels quels : {durée} · Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:294"}, {"k": "c0abec25ac", "screen": "Applis / pacte", "fr": "À toi de répondre", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:299"}, {"k": "5231158f14", "screen": "Applis / pacte", "fr": "En attente", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:300"}, {"k": "244bf2ef42", "screen": "Applis / pacte", "fr": "À lancer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:301"}, {"k": "24c4a2f871", "screen": "Applis / pacte", "fr": "Personne n'a encore proposé de durée.", "hint": "", "ref": "AppsActivity.kt:308"}, {"k": "1be7416816", "screen": "Applis / pacte", "fr": "Proposer une durée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:311"}, {"k": "bbda1fa49b", "screen": "Applis / pacte", "fr": "Contre-proposer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:316"}, {"k": "f8b9b80ecd", "screen": "Applis / pacte", "fr": "Accepter", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:320"}, {"k": "4792f14c7c", "screen": "Applis / pacte", "fr": "Tu proposes", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:327"}, {"k": "79d0184665", "screen": "Applis / pacte", "fr": "En attente de la réponse de {pote}.", "hint": "Garde tels quels : {pote}", "ref": "AppsActivity.kt:328"}, {"k": "65aa3f33b8", "screen": "Applis / pacte", "fr": "Modifier ma proposition", "hint": "", "ref": "AppsActivity.kt:331"}, {"k": "e6d794c361", "screen": "Applis / pacte", "fr": "Échanges précédents", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:338"}, {"k": "d888d25a0f", "screen": "Applis / pacte", "fr": "Accepter {durée} par jour ?", "hint": "Garde tels quels : {durée}", "ref": "AppsActivity.kt:370"}, {"k": "945fab5e20", "screen": "Applis / pacte", "fr": "{appli} sera limitée à {durée} par jour pour vous deux. Pour la changer ensuite, il faudra renégocier le pacte ensemble.", "hint": "Garde tels quels : {appli}, {durée}", "ref": "AppsActivity.kt:371"}, {"k": "ab546c237a", "screen": "Applis / pacte", "fr": "Erreur", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:375"}, {"k": "53b8745d97", "screen": "Applis / pacte", "fr": "{pote} propose {durée} par jour. Ta contre-proposition :", "hint": "Garde tels quels : {pote}, {durée}", "ref": "AppsActivity.kt:395"}, {"k": "d21d2381a6", "screen": "Applis / pacte", "fr": "Durée par jour que tu proposes à {pote} :", "hint": "Garde tels quels : {pote}", "ref": "AppsActivity.kt:396"}, {"k": "05495a7a94", "screen": "Applis / pacte", "fr": "Couper la poire en deux : {durée}", "hint": "Garde tels quels : {durée}", "ref": "AppsActivity.kt:460"}, {"k": "91eedfb9c5", "screen": "Applis / pacte", "fr": "Contre-proposition · {appli}", "hint": "Garde tels quels : {appli}", "ref": "AppsActivity.kt:467"}, {"k": "e9ce243b4a", "screen": "Applis / pacte", "fr": "Envoyer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:469"}, {"k": "84d362b448", "screen": "Applis / pacte", "fr": "Proposer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:469"}, {"k": "0523eaffea", "screen": "Applis / pacte", "fr": "Entre une durée entre {nombre} et {nombre} min.", "hint": "Garde tels quels : {nombre}", "ref": "AppsActivity.kt:474"}, {"k": "e035c70334", "screen": "Applis / pacte", "fr": "Le pacte est en vigueur", "hint": "", "ref": "AppsActivity.kt:496"}, {"k": "99738b378f", "screen": "Applis / pacte", "fr": "Ces limites s'appliquent chaque jour sur les deux téléphones. Quand le temps est écoulé, l'application est bloquée : seul ton pote peut la débloquer.", "hint": "", "ref": "AppsActivity.kt:497"}, {"k": "e9d61ae7fa", "screen": "Applis / pacte", "fr": "Applications limitées", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:503"}, {"k": "3a2c46cd44", "screen": "Applis / pacte", "fr": "Renégocier le pacte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:523"}, {"k": "2972e73265", "screen": "Applis / pacte", "fr": "Changer les applications ou les durées demande l'accord des DEUX. Impossible de s'y soustraire tout seul.", "hint": "", "ref": "AppsActivity.kt:526"}, {"k": "172a30fbfe", "screen": "Applis / pacte", "fr": "En attente de {pote}…", "hint": "Garde tels quels : {pote} · Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:533"}, {"k": "69982ad0ba", "screen": "Applis / pacte", "fr": "Annuler ma demande", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:538"}, {"k": "5832579c39", "screen": "Applis / pacte", "fr": "{pote} veut renégocier le pacte", "hint": "Garde tels quels : {pote}", "ref": "AppsActivity.kt:544"}, {"k": "827a718b76", "screen": "Applis / pacte", "fr": "Accepter de renégocier", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:550"}, {"k": "93e966e031", "screen": "Applis / pacte", "fr": "Je veux renégocier", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppsActivity.kt:550"}, {"k": "49a0fcf0e6", "screen": "Applis / pacte", "fr": "Durée invalide (1 à {nombre} minutes).", "hint": "Garde tels quels : {nombre}", "ref": "PlanRepository.kt:220"}, {"k": "5efeca1fd2", "screen": "Applis / pacte", "fr": "Application introuvable dans le pacte.", "hint": "", "ref": "PlanRepository.kt:226"}, {"k": "5083839da0", "screen": "Applis / pacte", "fr": "Tu ne fais pas partie de ce duo.", "hint": "", "ref": "PlanRepository.kt:227"}, {"k": "9b0af8b75b", "screen": "Applis / pacte", "fr": "L'offre a changé, regarde la nouvelle proposition.", "hint": "", "ref": "PlanRepository.kt:257"}, {"k": "76c74bd071", "screen": "Applis / pacte", "fr": "Applications", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_apps.xml:11"}, {"k": "e501abdf44", "screen": "Choix des applis", "fr": "Touche une application pour la sélectionner", "hint": "", "ref": "AppPickerActivity.kt:47"}, {"k": "8ce2112a17", "screen": "Choix des applis", "fr": "1 application sélectionnée", "hint": "", "ref": "AppPickerActivity.kt:48"}, {"k": "f77008c0a6", "screen": "Choix des applis", "fr": "{nombre} applications sélectionnées", "hint": "Garde tels quels : {nombre}", "ref": "AppPickerActivity.kt:49"}, {"k": "f7c8bcd8b2", "screen": "Choix des applis", "fr": "Enregistrer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppPickerActivity.kt:51"}, {"k": "cb6fc0b77e", "screen": "Choix des applis", "fr": ", sélectionnée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AppPickerActivity.kt:113"}, {"k": "0053671dab", "screen": "Choix des applis", "fr": "Applications à limiter", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_app_picker.xml:32"}, {"k": "edec730b60", "screen": "Choix des applis", "fr": "Rechercher une application", "hint": "", "ref": "activity_app_picker.xml:53"}, {"k": "3e50228500", "screen": "Choix des applis", "fr": "Aucune application ne correspond.", "hint": "", "ref": "activity_app_picker.xml:80"}, {"k": "dd3011f71c", "screen": "Écran de blocage", "fr": "{appli} est verrouillée", "hint": "Garde tels quels : {appli}", "ref": "BlockOverlay.kt:89"}, {"k": "ec7b80b5ca", "screen": "Écran de blocage", "fr": "Limite de {durée} min/jour atteinte.\nDéblocable uniquement avec la permission de ton pote.", "hint": "Garde tels quels : {durée} · Garde les retours à la ligne", "ref": "BlockOverlay.kt:94"}, {"k": "c3b2da7863", "screen": "Écran de blocage", "fr": "Pourquoi en as-tu besoin ?", "hint": "", "ref": "BlockOverlay.kt:103"}, {"k": "ff6de6c0e5", "screen": "Écran de blocage", "fr": "Demander l'autorisation à mon pote", "hint": "", "ref": "BlockOverlay.kt:160"}, {"k": "a3cb7af7fa", "screen": "Écran de blocage", "fr": "Retour à l'accueil", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BlockOverlay.kt:166"}, {"k": "38d336bcad", "screen": "Écran de blocage", "fr": "Ton pote ne donne plus signe de vie depuis {durée}.", "hint": "Garde tels quels : {durée}", "ref": "BlockOverlay.kt:186"}, {"k": "856411b903", "screen": "Écran de blocage", "fr": "Mettre fin au duo", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BlockOverlay.kt:192"}, {"k": "af8d0cbf44", "screen": "Écran de blocage", "fr": "Pas encore lié à un pote", "hint": "", "ref": "BlockOverlay.kt:273"}, {"k": "6483f604da", "screen": "Écran de blocage", "fr": "Envoi de la demande…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "BlockOverlay.kt:277"}, {"k": "843bb533ef", "screen": "Écran de blocage", "fr": "Une demande est déjà en attente. Sans réponse, elle expire au bout de 30 min : tu pourras alors redemander.", "hint": "", "ref": "BlockOverlay.kt:285"}, {"k": "aabb52b390", "screen": "Écran de blocage", "fr": "Demande envoyée. L'écran se débloquera dès que ton pote accepte (valable 30 min).", "hint": "", "ref": "BlockOverlay.kt:287"}, {"k": "7ebe3150aa", "screen": "Demandes du pote", "fr": "Tout est à jour", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:75"}, {"k": "e93943166e", "screen": "Demandes du pote", "fr": "Aucune demande en attente. Une notification t'avertira dès que {pote} demandera à débloquer une application.", "hint": "Garde tels quels : {pote}", "ref": "RequestsActivity.kt:76"}, {"k": "0d58f58767", "screen": "Demandes du pote", "fr": "Si tu acceptes, l'application est débloquée pendant 15 minutes sur son téléphone. Sans réponse, une demande expire au bout de 30 minutes.", "hint": "", "ref": "RequestsActivity.kt:84"}, {"k": "ad0e5345e1", "screen": "Demandes du pote", "fr": "Demandé {il y a…}", "hint": "Garde tels quels : {il y a…} · Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:97"}, {"k": "72493d7b05", "screen": "Demandes du pote", "fr": "Expire dans {minutes} min", "hint": "Garde tels quels : {minutes}", "ref": "RequestsActivity.kt:98"}, {"k": "6d69fc6c04", "screen": "Demandes du pote", "fr": "{pote} veut débloquer {appli}.", "hint": "Garde tels quels : {pote}, {appli}", "ref": "RequestsActivity.kt:102"}, {"k": "22fd26f95e", "screen": "Demandes du pote", "fr": "Réponse impossible : la demande a expiré.", "hint": "", "ref": "RequestsActivity.kt:122"}, {"k": "ad40a1a860", "screen": "Demandes du pote", "fr": "{appli} débloquée 15 min pour {pote}.", "hint": "Garde tels quels : {appli}, {pote}", "ref": "RequestsActivity.kt:129"}, {"k": "065d1b6522", "screen": "Demandes du pote", "fr": "Demande refusée.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:129"}, {"k": "672462cd90", "screen": "Demandes du pote", "fr": "Accorder 15 min", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:138"}, {"k": "beb844c3d4", "screen": "Demandes du pote", "fr": "Répondre par message", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:145"}, {"k": "5cf70189ae", "screen": "Demandes du pote", "fr": "Aucune raison donnée.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsActivity.kt:160"}, {"k": "0d512d3547", "screen": "Demandes du pote", "fr": "Travail / études", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsRepository.kt:25"}, {"k": "862f4c7e5c", "screen": "Demandes du pote", "fr": "Message important", "hint": "Texte court (bouton ou titre) : reste court", "ref": "RequestsRepository.kt:27"}, {"k": "2cd6c1cbe4", "screen": "Messages", "fr": "Signaler la conversation", "hint": "", "ref": "ChatActivity.kt:79"}, {"k": "a5d712f020", "screen": "Messages", "fr": "Messages du duo", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:92"}, {"k": "35f8de34d3", "screen": "Messages", "fr": "Aucun message", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:172"}, {"k": "9ad0d65bef", "screen": "Messages", "fr": "Encourage ton pote, ou explique-lui pourquoi tu as besoin d'un déblocage.", "hint": "", "ref": "ChatActivity.kt:173"}, {"k": "090b7eabfe", "screen": "Messages", "fr": "Ton compte est suspendu suite à un signalement : tu ne peux plus envoyer de messages.", "hint": "", "ref": "ChatActivity.kt:207"}, {"k": "e8a2939b0f", "screen": "Messages", "fr": "Message non envoyé (accès refusé).", "hint": "", "ref": "ChatActivity.kt:208"}, {"k": "b1b5f2d061", "screen": "Messages", "fr": "Message non envoyé : {erreur}", "hint": "Garde tels quels : {erreur}", "ref": "ChatActivity.kt:213"}, {"k": "b92187a1a4", "screen": "Messages", "fr": "Message supprimé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:261"}, {"k": "cdd28e1a69", "screen": "Messages", "fr": "Copier", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:288"}, {"k": "68f4145fee", "screen": "Messages", "fr": "Message", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:290"}, {"k": "08b9fcc044", "screen": "Messages", "fr": "Message copié", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:291"}, {"k": "f53d4ac961", "screen": "Messages", "fr": "Supprimer pour tout le monde", "hint": "", "ref": "ChatActivity.kt:293"}, {"k": "f2d2783df2", "screen": "Messages", "fr": "Supprimer pour moi", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:296"}, {"k": "02813d401e", "screen": "Messages", "fr": "Signaler ce message", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:297"}, {"k": "7072d6b0d2", "screen": "Messages", "fr": "Supprimer pour tout le monde ?", "hint": "", "ref": "ChatActivity.kt:336"}, {"k": "493f8c02ae", "screen": "Messages", "fr": "Le message sera remplacé par « Ce message a été supprimé » chez vous deux.", "hint": "Les « » désignent un réglage ou un bouton du téléphone", "ref": "ChatActivity.kt:337"}, {"k": "1acfc1c7d7", "screen": "Messages", "fr": "Supprimer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:338"}, {"k": "c9782086e7", "screen": "Messages", "fr": "Suppression impossible : {valeur}", "hint": "Garde tels quels : {valeur}", "ref": "ChatActivity.kt:346"}, {"k": "e285dabdb0", "screen": "Messages", "fr": "Les {nombre} derniers messages de la conversation seront transmis à l'équipe DuoPact pour examen. Ton pote n'est pas prévenu.", "hint": "Garde tels quels : {nombre}", "ref": "ChatActivity.kt:367"}, {"k": "a8bd5a6668", "screen": "Messages", "fr": "Signaler", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:393"}, {"k": "56170bbec1", "screen": "Messages", "fr": "Choisis un motif.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:401"}, {"k": "89ed803222", "screen": "Messages", "fr": "Signalement impossible : {valeur}", "hint": "Garde tels quels : {valeur}", "ref": "ChatActivity.kt:413"}, {"k": "05e1b88673", "screen": "Messages", "fr": "Signalement envoyé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:424"}, {"k": "fe4f370d4c", "screen": "Messages", "fr": "Merci. La conversation a été transmise à l'équipe DuoPact (référence {référence}).\n\nTu peux aussi nous prévenir par email pour accélérer l'examen. Si tu ne veux plus échanger avec cette personne, tu peux supprimer ton compte depuis l'onglet Duo.", "hint": "Garde tels quels : {référence} · Garde les retours à la ligne", "ref": "ChatActivity.kt:426"}, {"k": "7b9d8e3515", "screen": "Messages", "fr": "Prévenir par email", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:431"}, {"k": "3b016db9ac", "screen": "Messages", "fr": "Signalement DuoPact {référence}", "hint": "Garde tels quels : {référence}", "ref": "ChatActivity.kt:433"}, {"k": "3280c9f0d8", "screen": "Messages", "fr": "Aucune application email. Écris à {email}.", "hint": "Garde tels quels : {email}", "ref": "ChatActivity.kt:442"}, {"k": "5ab4ec640d", "screen": "Messages", "fr": "Fermer", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:445"}, {"k": "a86e9a3a04", "screen": "Messages", "fr": "Tu tiens le coup ?", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:452"}, {"k": "cb5320f219", "screen": "Messages", "fr": "Bravo, continue", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:452"}, {"k": "4be772d1b0", "screen": "Messages", "fr": "Merci", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:452"}, {"k": "09bfb33a0c", "screen": "Messages", "fr": "Je travaille", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:452"}, {"k": "0531b999af", "screen": "Messages", "fr": "Désolé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:452"}, {"k": "ab646b8443", "screen": "Messages", "fr": "Message retiré par la modération", "hint": "", "ref": "ChatActivity.kt:589"}, {"k": "ac44f148c3", "screen": "Messages", "fr": "Tu as supprimé ce message", "hint": "", "ref": "ChatActivity.kt:590"}, {"k": "f42b558402", "screen": "Messages", "fr": "Ce message a été supprimé", "hint": "", "ref": "ChatActivity.kt:591"}, {"k": "a625611fb4", "screen": "Messages", "fr": "Envoi…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:624"}, {"k": "3187adc208", "screen": "Messages", "fr": "message supprimé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:630"}, {"k": "f22dac1ff1", "screen": "Messages", "fr": ". Appui long pour plus d'options.", "hint": "", "ref": "ChatActivity.kt:630"}, {"k": "baca97f697", "screen": "Messages", "fr": "Aujourd'hui", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:650"}, {"k": "e6faf8c20c", "screen": "Messages", "fr": "Hier", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ChatActivity.kt:652"}, {"k": "fd8067853f", "screen": "Messages", "fr": "Harcèlement ou insultes", "hint": "", "ref": "MessagesRepository.kt:40"}, {"k": "de1379f5bd", "screen": "Messages", "fr": "Menaces", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MessagesRepository.kt:40"}, {"k": "366314c496", "screen": "Messages", "fr": "Contenu sexuel", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MessagesRepository.kt:40"}, {"k": "95917a1b88", "screen": "Messages", "fr": "Contenu illégal", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MessagesRepository.kt:40"}, {"k": "326a8dd520", "screen": "Messages", "fr": "Spam ou arnaque", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MessagesRepository.kt:40"}, {"k": "43dacf9e47", "screen": "Messages", "fr": "Autre", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MessagesRepository.kt:40"}, {"k": "e44d340185", "screen": "Messages", "fr": "Encouragez-vous, expliquez vos demandes", "hint": "", "ref": "activity_chat.xml:42"}, {"k": "cb1ed5a043", "screen": "Messages", "fr": "Écris un message…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_chat.xml:104"}, {"k": "120a32a2aa", "screen": "Historique", "fr": "Aucune demande pour l'instant", "hint": "", "ref": "HistoryActivity.kt:48"}, {"k": "bf19fce6ab", "screen": "Historique", "fr": "Les demandes de déblocage, les tiennes comme celles de {pote}, apparaîtront ici.", "hint": "Garde tels quels : {pote}", "ref": "HistoryActivity.kt:49"}, {"k": "62cbbc5818", "screen": "Historique", "fr": "accordées", "hint": "Texte court (bouton ou titre) : reste court", "ref": "HistoryActivity.kt:91"}, {"k": "d747492e1f", "screen": "Historique", "fr": "refusées", "hint": "Texte court (bouton ou titre) : reste court", "ref": "HistoryActivity.kt:92"}, {"k": "8674b4dab5", "screen": "Historique", "fr": "Accordé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "HistoryActivity.kt:129"}, {"k": "340218a511", "screen": "Historique", "fr": "Refusé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "HistoryActivity.kt:130"}, {"k": "1f0808dc8b", "screen": "Historique", "fr": "Expirée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "HistoryActivity.kt:131"}, {"k": "34f3a06a72", "screen": "Historique", "fr": "Historique", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_history.xml:11"}, {"k": "ed30d4ab21", "screen": "Mon duo", "fr": "Duo formé le {date}", "hint": "Garde tels quels : {date} · Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:75"}, {"k": "fa50e15ce0", "screen": "Mon duo", "fr": "Ton pote ne donne plus signe de vie", "hint": "", "ref": "DuoActivity.kt:110"}, {"k": "480e696f26", "screen": "Mon duo", "fr": "Aucune nouvelle depuis {durée} : application désinstallée, téléphone perdu ou éteint. Sans lui, personne ne peut accepter tes demandes de déblocage.\n\nTu peux mettre fin au duo : le pacte est levé et tu pourras te lier à quelqu'un d'autre.", "hint": "Garde tels quels : {durée} · Garde les retours à la ligne", "ref": "DuoActivity.kt:115"}, {"k": "e490904c5b", "screen": "Mon duo", "fr": "Mettre fin au duo ?", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:129"}, {"k": "f49a17766a", "screen": "Mon duo", "fr": "Le pacte sera levé sur ton téléphone et le duo effacé (messages et historique compris). Si ton pote revient, son application sera libérée elle aussi.\n\nC'est possible uniquement après {durée} sans nouvelles : le serveur le vérifie.", "hint": "Garde tels quels : {durée} · Garde les retours à la ligne", "ref": "DuoActivity.kt:131"}, {"k": "94e99321f0", "screen": "Mon duo", "fr": "Mettre fin", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:136"}, {"k": "30a67937d0", "screen": "Mon duo", "fr": "Vérification…", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:144"}, {"k": "73d43d2c3d", "screen": "Mon duo", "fr": "Duo terminé. Plus aucune application n'est bloquée.", "hint": "", "ref": "DuoActivity.kt:152"}, {"k": "5b5df8c307", "screen": "Mon duo", "fr": "Aucune donnée de ton pote pour l'instant.", "hint": "", "ref": "DuoActivity.kt:176"}, {"k": "957618d89f", "screen": "Mon duo", "fr": "Protection coupée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:179"}, {"k": "6ad6a8bb10", "screen": "Mon duo", "fr": "Le blocage ne s'applique plus de son côté.\nDernière synchro : {il y a…}", "hint": "Garde tels quels : {il y a…} · Garde les retours à la ligne", "ref": "DuoActivity.kt:180"}, {"k": "a0f077a06a", "screen": "Mon duo", "fr": "Heure modifiée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:184"}, {"k": "23cceb54ad", "screen": "Mon duo", "fr": "\nÇa peut servir à remettre son compteur à zéro.", "hint": "Garde les retours à la ligne", "ref": "DuoActivity.kt:186"}, {"k": "be46b5e372", "screen": "Mon duo", "fr": "Sans nouvelles", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:189"}, {"k": "a7d62e3014", "screen": "Mon duo", "fr": "Protection active", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:194"}, {"k": "5802962e28", "screen": "Mon duo", "fr": "Dernière synchro : {il y a…}", "hint": "Garde tels quels : {il y a…}", "ref": "DuoActivity.kt:196"}, {"k": "661c08affd", "screen": "Mon duo", "fr": "Tu ne peux pas te déconnecter tant que le pacte est actif. Renégocie-le avec ton pote depuis l'onglet Applications.", "hint": "", "ref": "DuoActivity.kt:216"}, {"k": "4ecfd59b83", "screen": "Mon duo", "fr": "Se déconnecter ?", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:224"}, {"k": "a2eda1236e", "screen": "Mon duo", "fr": "Tu quitteras ton duo sur cet appareil et le blocage s'arrêtera. Ton pote verra que ta protection est désactivée.", "hint": "", "ref": "DuoActivity.kt:226"}, {"k": "ea36fa177a", "screen": "Mon duo", "fr": "Se déconnecter", "hint": "Texte court (bouton ou titre) : reste court", "ref": "DuoActivity.kt:229"}, {"k": "bbc4e027da", "screen": "Mon duo", "fr": "Mon duo", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_duo.xml:12"}, {"k": "ed1cbdf7ab", "screen": "Mon duo", "fr": "Toi & ton pote", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_duo.xml:52"}, {"k": "b12c55699d", "screen": "Mon duo", "fr": "Mon compte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_duo.xml:92"}, {"k": "e894aea3c8", "screen": "Mon duo", "fr": "Supprimer mon compte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "activity_duo.xml:108"}, {"k": "42b0e51e46", "screen": "Mon duo", "fr": "Politique de confidentialité", "hint": "", "ref": "activity_duo.xml:115"}, {"k": "b3120a4d4c", "screen": "Fin du duo", "fr": "Ton pote a donné signe de vie il y a {durée}. Tu pourras mettre fin au duo après {durée} sans nouvelles.", "hint": "Garde tels quels : {durée}", "ref": "DuoEnd.kt:100"}, {"k": "a8f80f26f5", "screen": "Compte suspendu", "fr": "Suspension définitive", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:84"}, {"k": "a0b0476ea6", "screen": "Compte suspendu", "fr": "Jusqu'au ", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:85"}, {"k": "fedb8bb05b", "screen": "Compte suspendu", "fr": "Compte suspendu", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:112"}, {"k": "8520f391fb", "screen": "Compte suspendu", "fr": " · tu peux te justifier", "hint": "", "ref": "Suspension.kt:114"}, {"k": "e5befb1f96", "screen": "Compte suspendu", "fr": "Retour", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:145"}, {"k": "5e65d92fea", "screen": "Compte suspendu", "fr": "Aucune suspension", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:172"}, {"k": "5863afd197", "screen": "Compte suspendu", "fr": "Ton compte n'est pas suspendu. Tu peux utiliser DuoPact normalement.", "hint": "", "ref": "Suspension.kt:173"}, {"k": "a4bd81ab54", "screen": "Compte suspendu", "fr": "Ton compte est suspendu", "hint": "", "ref": "Suspension.kt:186"}, {"k": "2a198f47f3", "screen": "Compte suspendu", "fr": "Motif", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:194"}, {"k": "705762c123", "screen": "Compte suspendu", "fr": "Pendant la suspension", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:199"}, {"k": "7ec8b3b045", "screen": "Compte suspendu", "fr": "Tu ne peux plus envoyer de messages ni de demandes de déblocage.", "hint": "", "ref": "Suspension.kt:201"}, {"k": "3fef0fe612", "screen": "Compte suspendu", "fr": "Tu ne peux pas créer ni rejoindre de nouveau duo.", "hint": "", "ref": "Suspension.kt:202"}, {"k": "e01b817d93", "screen": "Compte suspendu", "fr": "Ton pacte en cours continue de s'appliquer.", "hint": "", "ref": "Suspension.kt:203"}, {"k": "55bfdad56f", "screen": "Compte suspendu", "fr": "Te justifier", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:208"}, {"k": "ceece82572", "screen": "Compte suspendu", "fr": "Si tu penses que cette décision est une erreur, explique-le. Ta justification est lue par l'équipe DuoPact. Tu ne peux l'envoyer qu'une fois par suspension.", "hint": "", "ref": "Suspension.kt:212"}, {"k": "275848bdab", "screen": "Compte suspendu", "fr": "Envoyer ma justification", "hint": "", "ref": "Suspension.kt:231"}, {"k": "b69a95882e", "screen": "Compte suspendu", "fr": "Explique un peu plus (au moins {nombre} caractères).", "hint": "Garde tels quels : {nombre}", "ref": "Suspension.kt:235"}, {"k": "48532284f6", "screen": "Compte suspendu", "fr": "Envoi impossible : {valeur}", "hint": "Garde tels quels : {valeur}", "ref": "Suspension.kt:245"}, {"k": "45e1b27b49", "screen": "Compte suspendu", "fr": "En cours d'examen", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:251"}, {"k": "2c2da72f87", "screen": "Compte suspendu", "fr": "Justification examinée : suspension maintenue", "hint": "", "ref": "Suspension.kt:261"}, {"k": "696c9f1b6f", "screen": "Compte suspendu", "fr": "Justification acceptée", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:261"}, {"k": "78483cc92c", "screen": "Compte suspendu", "fr": "Réponse de l'équipe", "hint": "Texte court (bouton ou titre) : reste court", "ref": "Suspension.kt:270"}, {"k": "f91eb33982", "screen": "Compte suspendu", "fr": "Les règles sont dans les conditions d'utilisation de DuoPact.", "hint": "", "ref": "Suspension.kt:277"}, {"k": "c4b8638f4a", "screen": "Suppression de compte", "fr": "Mot de passe incorrect.", "hint": "", "ref": "AccountDeletion.kt:115"}, {"k": "2cb478e190", "screen": "Suppression de compte", "fr": "Trop d'essais. Réessaie dans quelques minutes.", "hint": "", "ref": "AccountDeletion.kt:116"}, {"k": "6679ec2417", "screen": "Suppression de compte", "fr": "Connexion impossible. Vérifie ton réseau puis réessaie.", "hint": "", "ref": "AccountDeletion.kt:118"}, {"k": "7a4c99787e", "screen": "Suppression de compte", "fr": "Ton mot de passe", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AccountDeletion.kt:128"}, {"k": "47511fa93c", "screen": "Suppression de compte", "fr": "Supprimer mon compte ?", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AccountDeletion.kt:138"}, {"k": "96882d9ffd", "screen": "Suppression de compte", "fr": "Cette action est définitive.\n\n• Ton compte, ton nom et ton temps d'utilisation sont effacés.\n• Le duo est dissous pour ton pote aussi : le pacte prend fin et son blocage s'arrête.\n• Tu ne pourras pas récupérer ce compte.\n\nPour confirmer, entre ton mot de passe.", "hint": "Garde les retours à la ligne", "ref": "AccountDeletion.kt:140"}, {"k": "66e03d8bb9", "screen": "Suppression de compte", "fr": "Supprimer définitivement", "hint": "", "ref": "AccountDeletion.kt:147"}, {"k": "49ba329242", "screen": "Suppression de compte", "fr": "Annuler", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AccountDeletion.kt:148"}, {"k": "ba3addc9e8", "screen": "Suppression de compte", "fr": "Mot de passe requis", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AccountDeletion.kt:158"}, {"k": "f2d6e90ab0", "screen": "Suppression de compte", "fr": "Compte supprimé.", "hint": "Texte court (bouton ou titre) : reste court", "ref": "AccountDeletion.kt:168"}, {"k": "6fd9444f69", "screen": "Changement d'heure", "fr": "avancée de ", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ClockGuard.kt:56"}, {"k": "63d2e2c3a1", "screen": "Changement d'heure", "fr": "reculée de ", "hint": "Texte court (bouton ou titre) : reste court", "ref": "ClockGuard.kt:56"}, {"k": "3cdd157907", "screen": "Notifications", "fr": "Surveillance DuoPact", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MonitorService.kt:77"}, {"k": "10a427ea1c", "screen": "Notifications", "fr": "DuoPact est actif", "hint": "Texte court (bouton ou titre) : reste court", "ref": "MonitorService.kt:84"}, {"k": "ba823902b7", "screen": "Notifications", "fr": "Demandes d'accès", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:28"}, {"k": "7b3f7340f0", "screen": "Notifications", "fr": "Alertes de protection", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:40"}, {"k": "25841a4b64", "screen": "Notifications", "fr": "Fin du déblocage dans {minutes} min", "hint": "Garde tels quels : {minutes}", "ref": "NotificationHelper.kt:58"}, {"k": "c59ed8990b", "screen": "Notifications", "fr": "Plus que {minutes} min sur {appli}", "hint": "Garde tels quels : {minutes}, {appli}", "ref": "NotificationHelper.kt:59"}, {"k": "211793e4a3", "screen": "Notifications", "fr": "{appli} sera de nouveau bloquée. Pense à enregistrer ce que tu fais.", "hint": "Garde tels quels : {appli}", "ref": "NotificationHelper.kt:60"}, {"k": "ce0bbfd80b", "screen": "Notifications", "fr": "Ensuite, {appli} sera bloquée jusqu'à demain (sauf accord de ton pote).", "hint": "Garde tels quels : {appli}", "ref": "NotificationHelper.kt:61"}, {"k": "e8d63d366d", "screen": "Notifications", "fr": "Prévient quelques minutes avant qu'une application soit bloquée.", "hint": "", "ref": "NotificationHelper.kt:70"}, {"k": "f17a2723aa", "screen": "Notifications", "fr": "Le blocage DuoPact est désactivé", "hint": "", "ref": "NotificationHelper.kt:101"}, {"k": "e4b3c11c04", "screen": "Notifications", "fr": "Ton pacte est actif : réactive le service d'accessibilité.", "hint": "", "ref": "NotificationHelper.kt:102"}, {"k": "4253c5fa11", "screen": "Notifications", "fr": "Heure du téléphone modifiée", "hint": "", "ref": "NotificationHelper.kt:122"}, {"k": "88fa807a8d", "screen": "Notifications", "fr": "Heure {durée}. Ton pote en est informé.", "hint": "Garde tels quels : {durée}", "ref": "NotificationHelper.kt:123"}, {"k": "f159a3a006", "screen": "Notifications", "fr": "Ton pote a changé l'heure de son téléphone", "hint": "", "ref": "NotificationHelper.kt:140"}, {"k": "3eb2c954f1", "screen": "Notifications", "fr": "{détail} Ça peut servir à remettre son compteur à zéro.", "hint": "Garde tels quels : {détail}", "ref": "NotificationHelper.kt:143"}, {"k": "ea1fe71c1e", "screen": "Notifications", "fr": "Le duo est terminé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:199"}, {"k": "4949221cab", "screen": "Notifications", "fr": "{raison} Le pacte est levé : plus aucune application n'est bloquée. Tu peux te lier à un nouveau pote.", "hint": "Garde tels quels : {raison}", "ref": "NotificationHelper.kt:202"}, {"k": "53485b6f9d", "screen": "Notifications", "fr": "Négociation du pacte", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:223"}, {"k": "3e3e45e667", "screen": "Notifications", "fr": "Ton pote a coupé sa protection", "hint": "", "ref": "NotificationHelper.kt:244"}, {"k": "95189be1b8", "screen": "Notifications", "fr": "Son blocage DuoPact n'est plus actif.", "hint": "", "ref": "NotificationHelper.kt:245"}, {"k": "2eba40529f", "screen": "Notifications", "fr": "Ton pote demande l'accès", "hint": "", "ref": "NotificationHelper.kt:284"}, {"k": "74821f2aed", "screen": "Notifications", "fr": "Autoriser {appli} pendant 15 min ?", "hint": "Garde tels quels : {appli}", "ref": "NotificationHelper.kt:285"}, {"k": "f9c7dda38c", "screen": "Notifications", "fr": "Raison : « {valeur} »\n", "hint": "Garde tels quels : {valeur} · Garde les retours à la ligne · Les « » désignent un réglage ou un bouton du téléphone", "ref": "NotificationHelper.kt:287"}, {"k": "ff83984310", "screen": "Notifications", "fr": "Autoriser", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:294"}, {"k": "628971549f", "screen": "Notifications", "fr": "Refuser", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:295"}, {"k": "1ff11c0c5d", "screen": "Notifications", "fr": "Accès autorisé", "hint": "Texte court (bouton ou titre) : reste court", "ref": "NotificationHelper.kt:305"}, {"k": "84f0a67a10", "screen": "Notifications", "fr": "Ton pote t'a débloqué {appli} pour 15 minutes.", "hint": "Garde tels quels : {appli}", "ref": "NotificationHelper.kt:306"}, {"k": "5baf0ad7b6", "screen": "Notifications", "fr": "Ton pote a supprimé son compte ou quitté le duo.", "hint": "", "ref": "PactSync.kt:78"}, {"k": "476b180864", "screen": "Notifications", "fr": "Le duo a été dissous par l'équipe DuoPact suite à un signalement.", "hint": "", "ref": "PactSync.kt:85"}, {"k": "19985ec897", "screen": "Notifications", "fr": "a accepté ta proposition : {appli}, {durée} par jour.", "hint": "Garde tels quels : {appli}, {durée}", "ref": "PactSync.kt:146"}, {"k": "b46c2cd933", "screen": "Notifications", "fr": "propose {durée} par jour pour {appli}. Accepte ou fais une contre-proposition.", "hint": "Garde tels quels : {durée}, {appli}", "ref": "PactSync.kt:149"}, {"k": "95a78f34cd", "screen": "Notifications", "fr": "Cette demande a expiré.", "hint": "", "ref": "RequestActionReceiver.kt:18"}, {"k": "89fdb9100e", "screen": "Notifications", "fr": "Réponse impossible : la demande a peut-être expiré.", "hint": "", "ref": "RequestActionReceiver.kt:23"}, {"k": "64ab747ce0", "screen": "Commun", "fr": "Aucun navigateur trouvé.", "hint": "", "ref": "Links.kt:17"}, {"k": "8130bc7ad4", "screen": "Commun", "fr": "Le duo n'existe plus (compte supprimé ou liaison expirée). Lie-toi à nouveau pour continuer.", "hint": "", "ref": "PairingGuard.kt:56"}, {"k": "2427aa9cb7", "screen": "Commun", "fr": "à l'instant", "hint": "Texte court (bouton ou titre) : reste court", "ref": "UiKit.kt:466"}, {"k": "ab69dd0537", "screen": "Commun", "fr": "il y a {minutes} min", "hint": "Garde tels quels : {minutes} · Texte court (bouton ou titre) : reste court", "ref": "UiKit.kt:467"}, {"k": "2c5a6f3471", "screen": "Commun", "fr": "il y a {heures} h", "hint": "Garde tels quels : {heures} · Texte court (bouton ou titre) : reste court", "ref": "UiKit.kt:468"}, {"k": "0568dadcfe", "screen": "Commun", "fr": "il y a {jours} j", "hint": "Garde tels quels : {jours} · Texte court (bouton ou titre) : reste court", "ref": "UiKit.kt:469"}, {"k": "fbec8545b7", "screen": "Commun", "fr": "DuoPact utilise ce service uniquement pour détecter quelle application est ouverte et afficher l'écran de blocage quand la limite convenue avec ton pote est atteinte. Le contenu de l'écran n'est ni lu ni envoyé.", "hint": "", "ref": "strings.xml:3"}];
+
+const firebaseConfig = { apiKey: 'AIzaSyDBZ7jSktZSLXx1DzPxRJE2jPN7VjDP-vg', authDomain: 'focus-duo-aa16a.firebaseapp.com', projectId: 'focus-duo-aa16a' };
+const ADMIN_EMAIL = 'squalli.yassine.dev@gmail.com';
+const params = new URLSearchParams(location.search);
+const EMULATOR = params.has('emulator'); // tests locaux uniquement
+const app = initializeApp(EMULATOR ? { ...firebaseConfig, projectId: 'demo-duopact' } : firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+if (EMULATOR) { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true }); connectFirestoreEmulator(db, '127.0.0.1', 8080); }
+
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const toast = (t) => { const x = $('toast'); x.textContent = t; x.hidden = false; clearTimeout(x._h); x._h = setTimeout(() => (x.hidden = true), 2600); };
+const BYKEY = new Map(STRINGS.map((s) => [s.k, s]));
+const tokensOf = (t) => [...new Set(t.match(/\{[^}]*\}/g) || [])];
+
+// ---------------------------------------------------------------- état
+let me = null;          // utilisateur Firebase
+let players = new Map(); // uid -> { name, credit, t, v }
+let mine = { name: '', credit: true, t: {}, v: {} };
+let skipped = new Set();
+let combo = 0;
+let current = null;     // clé de la phrase en cours
+let tab = 'play';
+let writing = Promise.resolve();
+
+// Points : +10 par traduction, +2 par vote donné, +3 par vote reçu (votes pour soi-même ignorés).
+function scores() {
+  const received = new Map();
+  for (const [voter, p] of players) for (const author of Object.values(p.v || {})) {
+    if (author !== voter) received.set(author, (received.get(author) || 0) + 1);
+  }
+  const out = [];
+  for (const [uid, p] of players) {
+    const t = Object.keys(p.t || {}).length, v = Object.keys(p.v || {}).length, r = received.get(uid) || 0;
+    out.push({ uid, name: p.name || 'Anonyme', t, v, r, points: t * 10 + v * 2 + r * 3 });
+  }
+  return out.sort((a, b) => b.points - a.points || b.t - a.t);
+}
+const LEVELS = ['Débutant', 'Apprenti', 'Traducteur', 'Expert', 'Maître', 'Légende'];
+const BADGES = [
+  ['Premier pas', (s) => s.t >= 1], ['Échauffé', (s) => s.t >= 10], ['Machine', (s) => s.t >= 50],
+  ['Légende', (s) => s.t >= 150], ['Juge', (s) => s.v >= 20], ['Apprécié', (s) => s.r >= 10],
+];
+
+// Toutes les traductions proposées par phrase : clé -> [{uid, text}]
+function proposals() {
+  const m = new Map();
+  for (const [uid, p] of players) for (const [k, text] of Object.entries(p.t || {})) {
+    if (!BYKEY.has(k)) continue;
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push({ uid, text });
+  }
+  return m;
+}
+
+// ---------------------------------------------------------------- connexion
+$('signIn').onclick = async () => {
+  try {
+    if (EMULATOR) await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub: params.get('as') || 'testeur', email: (params.get('as') || 'testeur') + '@gmail.com', email_verified: true, name: 'Testeur' })));
+    else await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) { $('loginError').textContent = 'Connexion impossible : ' + (e.code || e.message); $('loginError').hidden = false; }
+};
+$('signOut').onclick = () => signOut(auth);
+
+let unsub = null;
+onAuthStateChanged(auth, (user) => {
+  me = user;
+  $('signOut').hidden = !user;
+  unsub?.(); unsub = null;
+  if (!user) { ['profileView', 'gameView'].forEach((v) => ($(v).hidden = true)); $('loginView').hidden = false; return; }
+  $('loginView').hidden = true;
+  $('adminBox').hidden = user.email !== ADMIN_EMAIL;
+  unsub = onSnapshot(collection(db, 'tr_players'), (snap) => {
+    players = new Map(snap.docs.map((d) => [d.id, d.data()]));
+    const p = players.get(user.uid);
+    if (p) mine = { name: p.name, credit: p.credit, t: { ...(p.t || {}) }, v: { ...(p.v || {}) } };
+    if (!p && $('profileView').hidden && $('gameView').hidden) {
+      $('nameInput').value = user.displayName || '';
+      $('profileView').hidden = false;
+    } else if (p && $('gameView').hidden && $('profileView').hidden) {
+      $('gameView').hidden = false;
+      renderPlay();
+    }
+    renderHeader();
+    if (tab === 'board') renderBoard();
+    if (tab === 'vote' && !$('voteTab').dataset.busy) renderVote();
+  }, (e) => toast('Lecture impossible : ' + e.code));
+  if (EMULATOR && params.has('autoplay')) setTimeout(() => $('saveProfile').click(), 1500);
+  if (EMULATOR && params.get('tab')) setTimeout(() => document.querySelector(`.tab[data-tab="${params.get('tab')}"]`)?.click(), 3000);
+});
+if (EMULATOR && params.has('autologin')) onAuthStateChanged(auth, (u) => { if (!u) $('signIn').click(); });
+
+// Une écriture à la fois : le document entier du joueur, à l'heure du serveur.
+function save() {
+  writing = writing.then(() => setDoc(doc(db, 'tr_players', me.uid), {
+    name: mine.name, credit: mine.credit, t: mine.t, v: mine.v, updatedAt: serverTimestamp(),
+  })).catch((e) => toast('Enregistrement impossible : ' + e.code));
+  return writing;
+}
+
+$('saveProfile').onclick = async () => {
+  const name = $('nameInput').value.trim();
+  if (name.length < 2) return toast('Ton nom doit faire au moins 2 caractères.');
+  mine.name = name; mine.credit = $('creditInput').checked;
+  await save();
+  $('profileView').hidden = true; $('gameView').hidden = false;
+  renderPlay(); renderHeader();
+};
+$('editProfile').onclick = () => {
+  $('nameInput').value = mine.name; $('creditInput').checked = mine.credit;
+  $('gameView').hidden = true; $('profileView').hidden = false;
+};
+
+// ---------------------------------------------------------------- en-tête
+function renderHeader() {
+  const done = new Set();
+  for (const p of players.values()) for (const k of Object.keys(p.t || {})) if (BYKEY.has(k)) done.add(k);
+  const pct = Math.round((100 * done.size) / STRINGS.length);
+  $('globalTxt').textContent = `${done.size} / ${STRINGS.length} phrases traduites (${pct} %)`;
+  $('globalFill').style.width = pct + '%';
+  $('globalBar').setAttribute('aria-valuenow', pct);
+  if (!me) return;
+  const s = scores().find((x) => x.uid === me.uid) || { t: 0, v: 0, r: 0, points: 0 };
+  const lvl = Math.min(LEVELS.length - 1, Math.floor(s.points / 200));
+  $('myScore').textContent = s.points + ' pts';
+  $('myLevel').textContent = `Niveau ${lvl + 1} · ${LEVELS[lvl]}`;
+  $('levelFill').style.width = lvl === LEVELS.length - 1 ? '100%' : ((s.points % 200) / 2) + '%';
+  $('myStats').textContent = `${s.t} traduction(s) · ${s.v} vote(s) · ${s.r} vote(s) reçu(s)`;
+  $('badges').replaceChildren(...BADGES.map(([n, ok]) => el('span', 'badge2' + (ok(s) ? ' on' : ''), n)));
+  const toVote = votable().length;
+  $('voteCount').textContent = toVote ? ` ${toVote}` : '';
+}
+
+// ---------------------------------------------------------------- traduire
+function nextKey() {
+  const prop = proposals();
+  // D'abord les phrases que personne n'a traduites, dans l'ordre de l'application.
+  const todo = STRINGS.filter((s) => !mine.t[s.k] && !skipped.has(s.k));
+  todo.sort((a, b) => (prop.get(a.k)?.length || 0) - (prop.get(b.k)?.length || 0));
+  return todo[0]?.k || null;
+}
+
+function renderPlay() {
+  const box = $('playTab');
+  current = nextKey();
+  if (!current) {
+    const c = el('div', 'card');
+    c.append(el('h2', null, skipped.size ? 'Tu as tout parcouru !' : 'Tu as tout traduit, bravo !'),
+      el('p', 'muted', skipped.size ? 'Il reste les phrases passées.' : 'Passe à l\'onglet « Voter » pour choisir les meilleures traductions.'));
+    if (skipped.size) { const b = el('button', 'btn', 'Revoir les phrases passées'); b.onclick = () => { skipped.clear(); renderPlay(); }; c.append(b); }
+    return box.replaceChildren(c);
+  }
+  const s = BYKEY.get(current);
+  const card = el('div', 'card play slide');
+  const top = el('div', 'row');
+  top.append(el('span', 'chip', s.screen), el('span', 'grow'), el('span', 'combo', combo >= 3 ? `Série de ${combo} !` : ''));
+  card.append(top, el('div', 'fr', s.fr));
+  if (s.hint) card.append(el('div', 'hint', s.hint));
+  const ta = el('textarea', 'dar');
+  ta.dir = 'rtl'; ta.lang = 'ar'; ta.placeholder = 'اكتب الترجمة بالدارجة…'; ta.maxLength = 600;
+  ta.setAttribute('aria-label', 'Traduction en darija');
+  card.append(ta);
+  const toks = tokensOf(s.fr);
+  if (toks.length) {
+    const tb = el('div', 'tokens');
+    toks.forEach((t) => { const b = el('button', 'token', t); b.type = 'button'; b.onclick = () => { ta.setRangeText(t, ta.selectionStart, ta.selectionEnd, 'end'); ta.focus(); check(); }; tb.append(b); });
+    card.append(tb);
+  }
+  const warn = el('div', 'warn'); warn.hidden = true; card.append(warn);
+  const n = proposals().get(current)?.length || 0;
+  card.append(el('div', 'others', n ? `${n} autre(s) traduction(s) déjà proposée(s) : tu peux en proposer une meilleure.` : 'Personne ne l\'a encore traduite : à toi l\'honneur !'));
+  const row = el('div', 'row'); row.style.marginTop = '14px';
+  const ok = el('button', 'btn green', 'Valider  +10'); ok.disabled = true;
+  const skip = el('button', 'btn', 'Passer');
+  row.append(ok, skip); card.append(row);
+  function check() {
+    const missing = toks.filter((t) => !ta.value.includes(t));
+    warn.hidden = !missing.length || !ta.value.trim();
+    warn.textContent = 'Il manque : ' + missing.join(', ');
+    ok.disabled = !ta.value.trim() || missing.length > 0;
+  }
+  ta.oninput = check;
+  ta.onkeydown = (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !ok.disabled) ok.click(); };
+  ok.onclick = async () => {
+    mine.t[current] = ta.value.trim().slice(0, 600);
+    combo++;
+    const before = scores().find((x) => x.uid === me.uid)?.t || 0;
+    card.append(el('div', 'pop', '+10'));
+    save();
+    milestone(before + 1);
+    setTimeout(renderPlay, 380);
+    renderHeader();
+  };
+  skip.onclick = () => { skipped.add(current); combo = 0; renderPlay(); };
+  box.replaceChildren(card);
+  ta.focus({ preventScroll: true });
+}
+
+function milestone(count) {
+  if ([1, 10, 25, 50, 100, 150, 250].includes(count)) {
+    toast(count === 1 ? 'Première traduction ! Badge « Premier pas » débloqué.' : `${count} traductions ! Continue comme ça.`);
+    confetti();
+  }
+}
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#22D3EE', '#C084FC', '#F472B6', '#2EE6A6', '#FFB938'];
+  for (let i = 0; i < 60; i++) {
+    const c = el('i', 'confetti');
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDelay = Math.random() * .6 + 's';
+    c.style.animationDuration = 1.6 + Math.random() * 1.2 + 's';
+    document.body.append(c);
+    setTimeout(() => c.remove(), 3200);
+  }
+}
+
+// ---------------------------------------------------------------- voter
+function votable() {
+  if (!me) return [];
+  const out = [];
+  for (const [k, list] of proposals()) {
+    const others = list.filter((x) => x.uid !== me.uid);
+    if (list.length >= 2 && others.length >= 1 && !mine.v[k]) out.push({ k, list });
+  }
+  return out;
+}
+
+function renderVote() {
+  const box = $('voteTab');
+  const items = votable();
+  if (!items.length) return box.replaceChildren(el('div', 'card empty', 'Rien à voter pour l\'instant : il faut au moins deux traductions pour une phrase.'));
+  const { k, list } = items[Math.floor(Math.random() * items.length)];
+  const s = BYKEY.get(k);
+  const card = el('div', 'card slide');
+  card.append(el('span', 'chip', s.screen), el('div', 'fr', s.fr), el('p', 'muted', 'Quelle traduction est la meilleure ?'));
+  // Ordre mélangé, sans montrer qui a écrit quoi (vote à l'aveugle).
+  [...list].sort(() => Math.random() - .5).forEach((p) => {
+    const b = el('button', 'choice', p.text);
+    b.lang = 'ar';
+    if (p.uid === me.uid) { b.disabled = true; b.title = 'Ta traduction'; b.style.opacity = '.55'; }
+    b.onclick = () => { mine.v[k] = p.uid; card.append(el('div', 'pop', '+2')); save(); renderHeader(); setTimeout(renderVote, 380); };
+    card.append(b);
+  });
+  const skip = el('button', 'btn', 'Je ne sais pas'); skip.style.marginTop = '12px';
+  skip.onclick = renderVote;
+  card.append(skip);
+  box.replaceChildren(card);
+}
+
+// ---------------------------------------------------------------- classement
+function renderBoard() {
+  const list = scores().filter((s) => s.t + s.v > 0);
+  const card = el('div', 'card');
+  card.append(el('h2', null, 'Classement'));
+  if (!list.length) card.append(el('p', 'muted', 'Personne n\'a encore joué. Sois le premier !'));
+  list.slice(0, 30).forEach((s, i) => {
+    const r = el('div', 'rank' + (me && s.uid === me.uid ? ' you' : ''));
+    r.append(el('div', 'pos' + (i < 3 ? ' g' + (i + 1) : ''), String(i + 1)));
+    const who = el('div'); who.append(el('strong', null, s.name), el('div', 'muted', `${s.t} traduction(s) · ${s.r} vote(s) reçu(s)`));
+    r.append(who, el('div', 'pts', s.points + ' pts'));
+    card.append(r);
+  });
+  $('boardTab').replaceChildren(card);
+}
+
+document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => {
+  tab = t.dataset.tab;
+  document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', x === t));
+  $('playTab').hidden = tab !== 'play'; $('voteTab').hidden = tab !== 'vote'; $('boardTab').hidden = tab !== 'board';
+  if (tab === 'play') renderPlay(); else if (tab === 'vote') renderVote(); else renderBoard();
+}));
+
+// ---------------------------------------------------------------- export (éditeur)
+function download(name, text, type) {
+  const a = el('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('exportCsv').onclick = () => {
+  const votes = new Map(); // "k|uid" -> nombre de votes
+  for (const [voter, p] of players) for (const [k, author] of Object.entries(p.v || {})) if (author !== voter) votes.set(k + '|' + author, (votes.get(k + '|' + author) || 0) + 1);
+  const prop = proposals();
+  const q = (x) => '"' + String(x).replace(/"/g, '""') + '"';
+  const rows = [['cle', 'ecran', 'francais', 'darija', 'votes', 'auteur', 'reference'].join(',')];
+  for (const s of STRINGS) {
+    const list = prop.get(s.k) || [];
+    const best = list.map((p) => ({ ...p, n: votes.get(s.k + '|' + p.uid) || 0 })).sort((a, b) => b.n - a.n)[0];
+    rows.push([s.k, s.screen, s.fr, best?.text || '', best?.n || 0, best ? players.get(best.uid)?.name || '' : '', s.ref].map(q).join(','));
+  }
+  download('duopact-darija.csv', '﻿' + rows.join('\n'), 'text/csv');
+};
+$('exportCredits').onclick = () => {
+  const names = scores().filter((s) => s.t > 0 && players.get(s.uid)?.credit).map((s) => s.name);
+  download('duopact-remerciements.txt', 'Traduit en darija par : ' + names.join(', ') + '\n', 'text/plain');
+};
+</script>
+</body>
+</html>
