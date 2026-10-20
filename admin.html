@@ -56,6 +56,7 @@
   .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0; }
   .meta-grid > div { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); }
   .meta-grid small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+  .meta-grid .pill { white-space: normal; margin-top: 6px; line-height: 1.35; }
   .chat { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 16px;
           border: 1px solid var(--border); max-height: 520px; overflow-y: auto; }
   .msg { max-width: 78%; padding: 8px 12px; border-radius: 16px; font-size: 15px; white-space: pre-wrap;
@@ -74,6 +75,23 @@
   .banner.warn { background: rgba(255, 185, 56, .1); border: 1px solid rgba(255, 185, 56, .35); }
   .banner.ok { background: rgba(46, 230, 166, .08); border: 1px solid rgba(46, 230, 166, .3); }
   .banner.bad { background: rgba(255, 77, 109, .1); border: 1px solid rgba(255, 77, 109, .4); }
+  .search { width: 100%; max-width: 480px; margin-bottom: 14px; padding: 11px 14px; border-radius: 12px;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+  select.tpl { margin: 8px 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border);
+               background: var(--surface); color: var(--text); font: inherit; max-width: 100%; }
+  .log-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 0;
+             border-bottom: 1px solid var(--border); font-size: 14px; }
+  .log-row:last-child { border-bottom: 0; }
+  @media (max-width: 600px) { .log-row { grid-template-columns: 1fr; gap: 2px; } }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .stat { padding: 16px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+  .stat b { display: block; font-size: 28px; line-height: 1.2; }
+  .stat small { color: var(--muted); }
+  .bars { display: flex; align-items: flex-end; gap: 10px; height: 160px; padding-top: 10px; }
+  .bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .bar i { display: block; width: 100%; max-width: 48px; border-radius: 8px 8px 3px 3px; min-height: 3px;
+           background: linear-gradient(180deg, #C084FC, #6366F1); }
+  .msg .tools { margin-top: 6px; }
   .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
            transform: translateX(-50%); padding: 10px 16px; border-radius: 12px; z-index: 50;
            background: #1F1E42; color: #F3F1FF; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
@@ -109,7 +127,10 @@
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="open" aria-selected="true">À traiter<span class="count" id="openCount" hidden></span></button>
       <button class="tab" role="tab" data-tab="closed">Traités</button>
-      <button class="tab" role="tab" data-tab="banned">Suspensions</button>
+      <button class="tab" role="tab" data-tab="banned">Suspensions<span class="count" id="appealCount" hidden title="Justifications à examiner"></span></button>
+      <button class="tab" role="tab" data-tab="users">Utilisateurs</button>
+      <button class="tab" role="tab" data-tab="log">Journal</button>
+      <button class="tab" role="tab" data-tab="stats">Statistiques</button>
     </div>
 
     <div class="layout" id="reportsLayout">
@@ -120,6 +141,20 @@
     <div id="bannedView" hidden>
       <div class="list" id="bannedList"></div>
     </div>
+
+    <div id="usersView" hidden>
+      <input class="search" id="userSearch" type="search" placeholder="Rechercher un nom d'utilisateur…" autocomplete="off">
+      <div class="layout">
+        <div class="list" id="userList"></div>
+        <div class="detail" id="userDetail"><div class="card empty">Cherche puis choisis un utilisateur.</div></div>
+      </div>
+    </div>
+
+    <div id="logView" hidden>
+      <div class="card"><div id="logList"></div></div>
+    </div>
+
+    <div id="statsView" hidden></div>
   </section>
 </main>
 
@@ -206,10 +241,17 @@ onAuthStateChanged(auth, (user) => {
   }
   show('dashView');
   startDashboard();
-  if (EMULATOR && params.get('select')) setTimeout(() => {
-    const r = reports.find((x) => x.id === params.get('select'));
-    if (r) { selected = r.id; renderList(); renderDetail(r); }
-  }, 1500);
+  if (EMULATOR && params.get('tab')) setTimeout(() => document.querySelector(`.tab[data-tab="${params.get('tab')}"]`)?.click(), 1500);
+  if (EMULATOR && params.get('q')) setTimeout(() => {
+    $('userSearch').value = params.get('q'); renderUserList(); $('userList').querySelector('.item')?.click();
+  }, 3000);
+  if (EMULATOR && params.get('select')) {
+    const tryOpen = (n) => {
+      const r = reports.find((x) => x.id === params.get('select'));
+      if (r) { selected = r.id; renderList(); renderDetail(r); } else if (n > 0) setTimeout(() => tryOpen(n - 1), 500);
+    };
+    setTimeout(() => tryOpen(20), 1000);
+  }
 });
 // Tests locaux : connexion automatique à l'émulateur.
 if (EMULATOR && params.has('autologin')) onAuthStateChanged(auth, (u) => { if (!u) $('signIn').click(); });
@@ -217,6 +259,9 @@ if (EMULATOR && params.has('autologin')) onAuthStateChanged(auth, (u) => { if (!
 // ---------------------------------------------------------------- données en direct
 let reports = [];      // tous les signalements (ouverts + traités)
 let banned = new Map(); // uid -> données de suspension
+let appeals = new Map(); // uid -> justification de la personne suspendue
+let modlog = [];         // journal de modération, le plus récent d'abord
+let users = null;        // [{ uid, username }] chargés à l'ouverture de l'onglet Utilisateurs
 let tab = 'open';
 let selected = null;
 
@@ -228,7 +273,18 @@ function startDashboard() {
     document.title = (open ? `(${open}) ` : '') + 'DuoPact — Modération';
     renderList();
     if (selected) renderDetail(reports.find((r) => r.id === selected));
+    if (tab === 'stats') renderStats();
   }, (e) => toast('Lecture refusée : ' + e.code)));
+  unsubscribe.push(onSnapshot(collection(db, 'modlog'), (snap) => {
+    modlog = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(b.at) - ms(a.at));
+    if (tab === 'log') renderLog();
+  }));
+  unsubscribe.push(onSnapshot(collection(db, 'appeals'), (snap) => {
+    appeals = new Map(snap.docs.map((d) => [d.id, d.data()]));
+    const pending = [...appeals.values()].filter((a) => a.status === 'pending').length;
+    $('appealCount').textContent = pending; $('appealCount').hidden = pending === 0;
+    if (tab === 'banned') renderBanned();
+  }));
   unsubscribe.push(onSnapshot(collection(db, 'banned'), (snap) => {
     banned = new Map(snap.docs.map((d) => [d.id, d.data()]));
     if (tab === 'banned') renderBanned();
@@ -236,15 +292,67 @@ function startDashboard() {
   }));
 }
 
+const VIEWS = { open: 'reportsLayout', closed: 'reportsLayout', banned: 'bannedView', users: 'usersView', log: 'logView', stats: 'statsView' };
 document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => {
   tab = t.dataset.tab;
   document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', x === t));
-  $('reportsLayout').hidden = tab === 'banned';
-  $('bannedView').hidden = tab !== 'banned';
+  new Set(Object.values(VIEWS)).forEach((v) => ($(v).hidden = v !== VIEWS[tab]));
   selected = null;
   $('detail').replaceChildren(el('div', 'card empty', 'Choisis un signalement.'));
-  tab === 'banned' ? renderBanned() : renderList();
+  if (tab === 'banned') renderBanned();
+  else if (tab === 'users') loadUsers();
+  else if (tab === 'log') renderLog();
+  else if (tab === 'stats') renderStats();
+  else renderList();
 }));
+
+/** Ouvre un signalement depuis un autre onglet (profil utilisateur, journal). */
+function openReport(id) {
+  const r = reports.find((x) => x.id === id);
+  if (!r) return toast('Signalement introuvable.');
+  document.querySelector(`.tab[data-tab="${r.status === 'open' ? 'open' : 'closed'}"]`).click();
+  selected = r.id; renderList(); renderDetail(r);
+}
+
+// ---------------------------------------------------------------- journal de modération
+const ACTIONS = {
+  dismissed: 'Signalement classé sans suite', ban_7d: 'Suspension 7 jours', ban_30d: 'Suspension 30 jours',
+  ban_forever: 'Suspension définitive', lift: 'Suspension levée', appeal_accepted: 'Justification acceptée',
+  appeal_rejected: 'Justification rejetée', reopen: 'Signalement rouvert', dissolve: 'Duo dissous',
+  remove_message: 'Message retiré',
+};
+/** Ajoute une entrée au journal (dans [batch] si fourni, pour que tout soit enregistré ensemble). */
+function logAction(action, targetUid, reportId, details, batch) {
+  const ref = doc(collection(db, 'modlog'));
+  const data = { action, targetUid: targetUid || null, reportId: reportId || null, details: (details || '').slice(0, 1000),
+    at: serverTimestamp(), by: ADMIN_EMAIL };
+  return batch ? batch.set(ref, data) : setDoc(ref, data);
+}
+
+// ---------------------------------------------------------------- modèles de réponse
+const TEMPLATES = {
+  note: [
+    'Aucune infraction aux conditions d\'utilisation.',
+    'Insultes répétées envers son pote.',
+    'Menaces explicites.',
+    'Contenu sexuel non sollicité.',
+    'Spam ou tentative d\'arnaque.',
+  ],
+  reply: [
+    'Suspension maintenue : les messages sont explicites et contraires aux conditions d\'utilisation.',
+    'Suspension maintenue : ce n\'est pas la première fois que ce comportement est signalé.',
+    'Suspension levée : merci pour tes explications. Merci de respecter les conditions d\'utilisation à l\'avenir.',
+    'Suspension levée : après vérification, il s\'agissait d\'un malentendu.',
+  ],
+};
+/** Menu déroulant qui remplit [target] avec un modèle (modifiable ensuite). */
+function templatePicker(kind, target) {
+  const s = el('select', 'tpl');
+  s.append(el('option', null, 'Utiliser un modèle…'));
+  TEMPLATES[kind].forEach((t) => s.append(el('option', null, t)));
+  s.onchange = () => { if (s.selectedIndex > 0) { target.value = s.value; target.focus(); } s.selectedIndex = 0; };
+  return s;
+}
 
 function banState(uid) {
   const b = banned.get(uid);
@@ -287,7 +395,14 @@ async function renderDetail(r) {
   const history = reports.filter((x) => x.reportedUid === r.reportedUid);
   const ban = banState(r.reportedUid);
   grid.append(cell('Personne signalée', reported, ban ? el('span', 'pill bad', ban.until ? `Suspendu jusqu'au ${fmt(ban.until)}` : 'Suspendu définitivement') : null));
-  grid.append(cell('Signalé par', reporter));
+  // Détection des signalements abusifs : combien de signalements de cette personne ont été classés sans suite.
+  const sent = reports.filter((x) => x.reporterUid === r.reporterUid);
+  const dismissed = sent.filter((x) => x.decision === 'dismissed').length;
+  const abuse = dismissed >= 3 && dismissed / Math.max(1, sent.filter((x) => x.status !== 'open').length) >= 0.6;
+  grid.append(cell('Signalé par', reporter,
+    el('span', 'pill ' + (abuse ? 'bad' : dismissed ? 'warn' : 'muted'),
+      abuse ? `Signalements abusifs probables : ${dismissed} sans suite sur ${sent.length}`
+        : `${sent.length} signalement(s) envoyé(s), ${dismissed} sans suite`)));
   grid.append(cell('Historique', `${history.length} signalement(s) contre ${reported}`));
   card.append(grid);
   if (r.details) { card.append(el('small', 'muted', 'Précisions'), el('p', null, r.details)); }
@@ -301,12 +416,15 @@ async function renderDetail(r) {
   // Décision
   if (r.status === 'open') {
     const note = el('textarea'); note.placeholder = 'Note sur ta décision (facultatif)';
-    card.append(el('h3', null, 'Décision'), note);
+    card.append(el('h3', null, 'Décision'), templatePicker('note', note), note);
     const actions = el('div', 'actions');
     const act = (label, cls, fn) => { const b = el('button', 'btn ' + cls, label); b.onclick = async () => {
       actions.querySelectorAll('button').forEach((x) => (x.disabled = true));
       try { await fn(note.value.trim()); toast('Décision enregistrée.'); }
-      catch (e) { toast('Échec : ' + (e.code || e.message)); actions.querySelectorAll('button').forEach((x) => (x.disabled = false)); }
+      catch (e) {
+        if (e.message !== 'Annulé') toast('Échec : ' + (e.code || e.message));
+        actions.querySelectorAll('button').forEach((x) => (x.disabled = false));
+      }
     }; actions.append(b); };
     act('Classer sans suite', '', (n) => decide(r, 'dismissed', n, null));
     act('Suspendre 7 jours', 'danger', (n) => decide(r, 'ban_7d', n, 7));
@@ -317,11 +435,16 @@ async function renderDetail(r) {
     card.append(el('div', 'banner ok', `${DECISIONS[r.decision] || 'Traité'} · ${fmt(r.decidedAt)}${r.note ? ' · ' + r.note : ''}`));
     const actions = el('div', 'actions');
     const reopen = el('button', 'btn small', 'Rouvrir');
-    reopen.onclick = () => updateDoc(doc(db, 'reports', r.id), { status: 'open' }).catch((e) => toast(e.code));
+    reopen.onclick = () => {
+      const b = writeBatch(db);
+      b.update(doc(db, 'reports', r.id), { status: 'open' });
+      logAction('reopen', r.reportedUid, r.id, '', b);
+      b.commit().catch((e) => toast(e.code));
+    };
     actions.append(reopen);
     if (ban) {
       const lift = el('button', 'btn small', 'Lever la suspension');
-      lift.onclick = () => deleteDoc(doc(db, 'banned', r.reportedUid)).then(() => toast('Suspension levée.')).catch((e) => toast(e.code));
+      lift.onclick = () => liftBan(r.reportedUid, r.id);
       actions.append(lift);
     }
     card.append(actions);
@@ -336,7 +459,8 @@ async function renderDetail(r) {
   for (const m of msgs) {
     const fromReported = m.senderUid === r.reportedUid;
     const bubble = el('div', 'msg ' + (fromReported ? 'reported' : 'reporter') + (m.id === r.focusMessageId ? ' focus' : ''));
-    let original = null, status = 'introuvable';
+    // Texte d'origine conservé dans le signalement (duo déjà dissous), sinon lu dans l'archive.
+    let original = (r.evidence || []).find((e) => e.id === m.id)?.original ?? null, status = 'introuvable';
     if (pairAlive && m.id) {
       const live = await getDoc(doc(db, 'pairs', r.pairId, 'messages', m.id)).catch(() => null);
       if (live?.exists()) {
@@ -364,6 +488,14 @@ async function renderDetail(r) {
     info.append(el('span', 'pill ' + (status === 'conforme' ? 'ok' : status === 'différent' ? 'bad' : 'muted'), status));
     if (m.id === r.focusMessageId) info.append(el('span', 'pill warn', 'Message signalé'));
     bubble.append(info);
+    // Contenu grave : retrait de CE message uniquement (le duo continue).
+    if (pairAlive && fromReported && !m.deleted && status === 'conforme') {
+      const tools = el('div', 'tools');
+      const rm = el('button', 'btn small danger', 'Retirer ce message');
+      rm.onclick = () => removeMessage(r, m);
+      tools.append(rm);
+      bubble.append(tools);
+    }
     chat.append(bubble);
   }
   chat.scrollTop = chat.scrollHeight;
@@ -380,8 +512,24 @@ async function renderDetail(r) {
 }
 
 async function decide(r, decision, note, days) {
+  if (days === Infinity && r.pairId) {
+    const ok = confirm('Suspension définitive : le duo sera aussi dissous (le pacte prend fin pour les deux, '
+      + 'la conversation est effacée ; la copie jointe au signalement est conservée). Continuer ?');
+    if (!ok) throw new Error('Annulé');
+  }
+  // Preuve : les textes d'origine des messages supprimés sont joints au signalement avant tout effacement.
+  const evidence = [];
+  if (r.pairId) {
+    for (const m of r.messages || []) {
+      if (!m.deleted || !m.id) continue;
+      const arc = await getDoc(doc(db, 'pairs', r.pairId, 'messageArchive', m.id)).catch(() => null);
+      if (arc?.exists()) evidence.push({ id: m.id, original: arc.data().text });
+    }
+  }
   const batch = writeBatch(db);
-  batch.update(doc(db, 'reports', r.id), { status: 'closed', decision, note, decidedAt: serverTimestamp() });
+  batch.update(doc(db, 'reports', r.id), { status: 'closed', decision, note, decidedAt: serverTimestamp(),
+    ...(evidence.length ? { evidence } : {}) });
+  logAction(decision, r.reportedUid, r.id, note, batch);
   if (days) {
     batch.set(doc(db, 'banned', r.reportedUid), {
       reason: (r.reason || 'Signalement') + (note ? ' — ' + note : ''),
@@ -392,6 +540,58 @@ async function decide(r, decision, note, days) {
     });
   }
   await batch.commit();
+  if (days === Infinity && r.pairId) await dissolvePair(r.pairId);
+}
+
+/** Suspension définitive : le duo est dissous (les deux applis le détectent et lèvent le pacte), puis effacé. */
+async function dissolvePair(pairId) {
+  const pairRef = doc(db, 'pairs', pairId);
+  const snap = await getDoc(pairRef).catch(() => null);
+  if (!snap?.exists()) return;
+  if (!snap.data().dissolvedBy) await updateDoc(pairRef, { dissolvedBy: 'moderation', dissolvedAt: Date.now() });
+  for (const sub of ['usage', 'selections', 'plan', 'limits', 'requests', 'messages', 'messageArchive']) {
+    const docs = (await getDocs(collection(db, 'pairs', pairId, sub))).docs;
+    for (let i = 0; i < docs.length; i += 10) {
+      const b = writeBatch(db);
+      docs.slice(i, i + 10).forEach((d) => b.delete(d.ref));
+      await b.commit();
+    }
+  }
+  await deleteDoc(pairRef);
+  await logAction('dissolve', null, null, `Duo ${pairId}`);
+  toast('Duo dissous.');
+}
+
+/** Lève une suspension (journalisée). [appeal] : décision sur la justification en même temps. */
+async function liftBan(uid, reportId, appeal) {
+  try {
+    const b = writeBatch(db);
+    if (appeal) b.update(doc(db, 'appeals', uid), { status: 'accepted', reply: appeal.reply || '', decidedAt: serverTimestamp() });
+    b.delete(doc(db, 'banned', uid));
+    logAction(appeal ? 'appeal_accepted' : 'lift', uid, reportId, appeal?.reply || '', b);
+    await b.commit();
+    toast('Suspension levée.');
+  } catch (e) { toast('Échec : ' + (e.code || e.message)); }
+}
+
+/** Retire un message précis (contenu grave) sans dissoudre le duo ; le texte est archivé à l'identique. */
+async function removeMessage(r, m) {
+  if (!confirm('Retirer ce message pour les deux personnes ? Il sera remplacé par « Message retiré par la modération ». '
+    + 'Le texte d\'origine reste archivé.')) return;
+  try {
+    const live = await getDoc(doc(db, 'pairs', r.pairId, 'messages', m.id));
+    if (!live.exists() || live.data().deleted) return toast('Ce message n\'existe plus ou est déjà supprimé.');
+    const b = writeBatch(db);
+    b.set(doc(db, 'pairs', r.pairId, 'messageArchive', m.id), {
+      senderUid: live.data().senderUid, text: live.data().text, createdAt: live.data().createdAt ?? 0,
+      deletedAt: serverTimestamp(), deletedBy: 'moderation',
+    });
+    b.update(doc(db, 'pairs', r.pairId, 'messages', m.id), { text: '', deleted: true, deletedAt: serverTimestamp(), deletedBy: 'moderation' });
+    logAction('remove_message', live.data().senderUid, r.id, live.data().text, b);
+    await b.commit();
+    toast('Message retiré.');
+    renderDetail(reports.find((x) => x.id === r.id));
+  } catch (e) { toast('Échec : ' + (e.code || e.message)); }
 }
 
 // ---------------------------------------------------------------- suspensions
@@ -408,13 +608,216 @@ async function renderBanned() {
     card.append(el('span', 'pill ' + (expired ? 'muted' : 'bad'),
       expired ? `Expirée depuis le ${fmt(b.until)}` : b.until ? `Jusqu'au ${fmt(b.until)}` : 'Définitive'));
     card.append(el('p', 'muted', `Depuis le ${fmt(b.at)}${b.reportId ? ' · signalement ' + b.reportId : ''}`));
-    const lift = el('button', 'btn small', expired ? 'Effacer' : 'Lever la suspension');
-    lift.onclick = () => deleteDoc(doc(db, 'banned', uid)).then(() => toast('Suspension levée.')).catch((e) => toast(e.code));
-    card.append(el('div', 'actions'));
-    card.lastChild.append(lift);
+
+    // Justification de la personne suspendue (une par suspension).
+    const ap = appeals.get(uid);
+    const apCurrent = ap && ms(ap.banAt) === ms(b.at);
+    let reply = null;
+    if (apCurrent) {
+      const box = el('div', 'banner ' + (ap.status === 'pending' ? 'warn' : ap.status === 'accepted' ? 'ok' : 'bad'));
+      box.append(el('strong', null, ap.status === 'pending' ? 'Justification à examiner' : ap.status === 'accepted' ? 'Justification acceptée' : 'Justification rejetée'));
+      box.append(el('p', null, ap.text || ''));
+      box.append(el('small', 'muted', `Envoyée le ${fmt(ap.createdAt)}`));
+      if (ap.reply) box.append(el('p', 'muted', 'Ta réponse : ' + ap.reply));
+      card.append(box);
+      if (ap.status === 'pending') {
+        reply = el('textarea');
+        reply.placeholder = 'Réponse affichée dans son application (facultatif)';
+        card.append(templatePicker('reply', reply), reply);
+      }
+    }
+
+    const actions = el('div', 'actions');
+    const lift = el('button', 'btn small' + (apCurrent && ap.status === 'pending' ? ' primary' : ''),
+      expired ? 'Effacer' : apCurrent && ap.status === 'pending' ? 'Accepter et lever la suspension' : 'Lever la suspension');
+    lift.onclick = () => liftBan(uid, b.reportId,
+      apCurrent && ap.status === 'pending' ? { reply: reply?.value.trim() || '' } : null);
+    actions.append(lift);
+    if (apCurrent && ap.status === 'pending') {
+      const reject = el('button', 'btn small danger', 'Rejeter et maintenir');
+      reject.onclick = () => {
+        const text = reply?.value.trim() || '';
+        const batch = writeBatch(db);
+        batch.update(doc(db, 'appeals', uid), { status: 'rejected', reply: text, decidedAt: serverTimestamp() });
+        logAction('appeal_rejected', uid, b.reportId, text, batch);
+        batch.commit().then(() => toast('Justification rejetée.')).catch((e) => toast('Échec : ' + e.code));
+      };
+      actions.append(reject);
+    }
+    card.append(actions);
     return card;
   }));
   list.replaceChildren(...nodes);
+}
+
+// ---------------------------------------------------------------- utilisateurs
+async function loadUsers() {
+  if (!users) {
+    $('userList').replaceChildren(el('div', 'empty', 'Chargement…'));
+    try {
+      users = (await getDocs(collection(db, 'users'))).docs.map((d) => ({ uid: d.id, username: d.data().username || d.id }));
+      users.forEach((u) => names.set(u.uid, Promise.resolve(u.username)));
+    } catch (e) { users = null; return $('userList').replaceChildren(el('div', 'empty', 'Lecture refusée : ' + e.code)); }
+  }
+  renderUserList();
+}
+
+$('userSearch').oninput = () => renderUserList();
+
+function renderUserList() {
+  const q = $('userSearch').value.trim().toLowerCase();
+  const list = $('userList');
+  if (!users) return;
+  if (!q) return list.replaceChildren(el('div', 'empty', `${users.length} utilisateur(s). Tape un nom pour chercher.`));
+  const found = users.filter((u) => u.username.toLowerCase().includes(q) || u.uid.startsWith(q)).slice(0, 30);
+  if (!found.length) return list.replaceChildren(el('div', 'empty', 'Aucun utilisateur trouvé.'));
+  list.replaceChildren(...found.map((u) => {
+    const b = el('button', 'item');
+    const top = el('div', 'top');
+    top.append(el('span', null, u.username));
+    const received = reports.filter((r) => r.reportedUid === u.uid).length;
+    if (banState(u.uid)) top.append(el('span', 'pill bad', 'Suspendu'));
+    else if (received) top.append(el('span', 'pill warn', `${received} signalement(s)`));
+    b.append(top);
+    b.append(el('div', 'sub', u.uid));
+    b.onclick = () => renderUser(u);
+    return b;
+  }));
+}
+
+async function renderUser(u) {
+  const box = $('userDetail');
+  const card = el('div', 'card');
+  card.append(el('h2', null, u.username));
+  card.append(el('p', 'muted', 'Identifiant : ' + u.uid));
+  const received = reports.filter((r) => r.reportedUid === u.uid);
+  const sent = reports.filter((r) => r.reporterUid === u.uid);
+  const sentDismissed = sent.filter((r) => r.decision === 'dismissed').length;
+  const ban = banState(u.uid);
+  const grid = el('div', 'meta-grid');
+  const cell = (label, value, extra) => { const d = el('div'); d.append(el('small', null, label), el('div', null, value)); if (extra) d.append(extra); return d; };
+  grid.append(cell('Statut', ban ? (ban.until ? `Suspendu jusqu'au ${fmt(ban.until)}` : 'Suspendu définitivement') : 'Actif',
+    el('span', 'pill ' + (ban ? 'bad' : 'ok'), ban ? 'Suspendu' : 'Aucune sanction en cours')));
+  grid.append(cell('Signalements reçus', String(received.length)));
+  grid.append(cell('Signalements envoyés', `${sent.length} (${sentDismissed} sans suite)`,
+    sentDismissed >= 3 ? el('span', 'pill bad', 'Signalements abusifs probables') : null));
+  const duoCell = cell('Duo actuel', 'Recherche…');
+  grid.append(duoCell);
+  card.append(grid);
+
+  const listFor = (title, items) => {
+    card.append(el('h3', null, title));
+    if (!items.length) return card.append(el('p', 'muted', 'Aucun.'));
+    const l = el('div', 'list');
+    items.forEach((r) => {
+      const b = el('button', 'item');
+      const top = el('div', 'top');
+      top.append(el('span', null, r.reason || 'Signalement'));
+      top.append(r.status === 'open' ? el('span', 'pill warn', 'À traiter') : el('span', 'pill muted', DECISIONS[r.decision] || 'Traité'));
+      b.append(top, el('div', 'sub', fmt(r.createdAt)));
+      b.onclick = () => openReport(r.id);
+      l.append(b);
+    });
+    card.append(l);
+  };
+  listFor('Signalements reçus', received);
+  listFor('Signalements envoyés', sent);
+
+  const history = modlog.filter((x) => x.targetUid === u.uid);
+  card.append(el('h3', null, 'Historique de modération'));
+  if (!history.length) card.append(el('p', 'muted', 'Aucune décision.'));
+  history.forEach((x) => card.append(logRow(x)));
+
+  if (ban) {
+    const actions = el('div', 'actions');
+    const lift = el('button', 'btn small', 'Lever la suspension');
+    lift.onclick = () => liftBan(u.uid, ban.reportId).then(() => renderUser(u));
+    actions.append(lift);
+    card.append(actions);
+  }
+  box.replaceChildren(card);
+
+  try {
+    const pairs = await getDocs(query(collection(db, 'pairs'), where('members', 'array-contains', u.uid)));
+    const p = pairs.docs.find((d) => !d.data().dissolvedBy);
+    if (!p) duoCell.lastChild.textContent = 'Aucun';
+    else {
+      const other = (p.data().members || []).find((m) => m !== u.uid);
+      duoCell.lastChild.textContent = `Avec ${await nameOf(other)} depuis le ${fmt(p.data().createdAt)}`;
+    }
+  } catch (e) { duoCell.lastChild.textContent = 'Indisponible (' + e.code + ')'; }
+}
+
+// ---------------------------------------------------------------- journal
+function logRow(x) {
+  const row = el('div', 'log-row');
+  row.append(el('div', 'muted', fmt(x.at)));
+  const what = el('div');
+  what.append(el('strong', null, ACTIONS[x.action] || x.action));
+  if (x.targetUid) {
+    const who = el('span', null, ' · …');
+    nameOf(x.targetUid).then((n) => (who.textContent = ' · ' + n));
+    what.append(who);
+  }
+  if (x.details) what.append(el('div', 'muted', x.details));
+  if (x.reportId) {
+    const link = el('button', 'btn small', 'Voir le signalement');
+    link.style.marginTop = '6px';
+    link.onclick = () => openReport(x.reportId);
+    what.append(el('div')); what.lastChild.append(link);
+  }
+  row.append(what);
+  return row;
+}
+
+function renderLog() {
+  const list = $('logList');
+  if (!modlog.length) return list.replaceChildren(el('div', 'empty', 'Aucune décision enregistrée pour l\'instant.'));
+  list.replaceChildren(el('p', 'muted', 'Chaque décision est enregistrée à l\'heure du serveur et ne peut être ni modifiée ni effacée.'),
+    ...modlog.slice(0, 200).map(logRow));
+}
+
+// ---------------------------------------------------------------- statistiques
+function renderStats() {
+  const week = 7 * 86400e3;
+  const now = Date.now();
+  const closed = reports.filter((r) => r.status !== 'open' && ms(r.decidedAt) && ms(r.createdAt));
+  const delays = closed.map((r) => ms(r.decidedAt) - ms(r.createdAt)).filter((d) => d >= 0);
+  const avg = delays.length ? delays.reduce((a, b) => a + b, 0) / delays.length : 0;
+  const human = (d) => d < 3600e3 ? `${Math.round(d / 60e3)} min` : d < 86400e3 ? `${(d / 3600e3).toFixed(1)} h` : `${(d / 86400e3).toFixed(1)} j`;
+  const activeBans = [...banned.keys()].filter((uid) => banState(uid)).length;
+  const dismissedRate = closed.length ? Math.round(100 * closed.filter((r) => r.decision === 'dismissed').length / closed.length) : 0;
+
+  const stats = el('div', 'stats');
+  const stat = (value, label) => { const s = el('div', 'stat'); s.append(el('b', null, value), el('small', null, label)); return s; };
+  stats.append(
+    stat(String(reports.filter((r) => r.status === 'open').length), 'signalements à traiter'),
+    stat(delays.length ? human(avg) : '—', 'délai moyen de traitement'),
+    stat(String(activeBans), 'suspensions en cours'),
+    stat(closed.length ? dismissedRate + ' %' : '—', 'classés sans suite'),
+    stat(String([...appeals.values()].filter((a) => a.status === 'pending').length), 'justifications à examiner'),
+  );
+
+  // Signalements par semaine (8 dernières semaines).
+  const counts = Array.from({ length: 8 }, (_, i) => {
+    const end = now - i * week, start = end - week;
+    return reports.filter((r) => ms(r.createdAt) >= start && ms(r.createdAt) < end).length;
+  }).reverse();
+  const max = Math.max(1, ...counts);
+  const chart = el('div', 'card');
+  chart.append(el('h2', null, 'Signalements par semaine'));
+  const bars = el('div', 'bars');
+  bars.setAttribute('role', 'img');
+  bars.setAttribute('aria-label', 'Signalements des 8 dernières semaines : ' + counts.join(', '));
+  counts.forEach((c, i) => {
+    const b = el('div', 'bar');
+    b.append(el('span', null, String(c)));
+    const bar = el('i'); bar.style.height = `${(c / max) * 120}px`;
+    b.append(bar, el('span', null, i === 7 ? 'cette sem.' : `S-${7 - i}`));
+    bars.append(b);
+  });
+  chart.append(bars);
+  $('statsView').replaceChildren(stats, chart);
 }
 </script>
 </body>
