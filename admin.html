@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DuoPact — Modération</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0A0A1F">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Tableau de bord de modération : complète style.css (mêmes couleurs que l'app). */
+  main { max-width: 1180px; }
+  .topbar-inner { max-width: 1180px; }
+  [hidden] { display: none !important; }
+  .center { min-height: 60vh; display: grid; place-items: center; text-align: center; }
+  .center .card { max-width: 420px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font: 600 14px/1.2 inherit; cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.15); }
+  .btn:disabled { opacity: .5; cursor: default; filter: none; }
+  .btn.primary { color: #fff; border: 0; background: linear-gradient(90deg, #6366F1, #9333EA); }
+  .btn.danger { color: #FF8FA3; border-color: rgba(255, 77, 109, .45); background: rgba(255, 77, 109, .08); }
+  .btn.small { padding: 6px 10px; font-size: 13px; border-radius: 10px; }
+  .who { color: var(--muted); font-size: 14px; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 18px; }
+  .tab { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: transparent;
+         color: var(--muted); font: 500 14px inherit; cursor: pointer; }
+  .tab[aria-selected="true"] { color: var(--text); background: var(--surface); }
+  .count { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 999px;
+           font-size: 12px; line-height: 20px; text-align: center; color: #fff; background: #F472B6; }
+
+  .layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .item { text-align: left; width: 100%; padding: 14px 16px; border-radius: 16px; cursor: pointer;
+          border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+  .item:hover { border-color: color-mix(in srgb, var(--violet) 50%, transparent); }
+  .item[aria-current="true"] { border-color: var(--violet); box-shadow: 0 0 0 1px var(--violet) inset; }
+  .item .top { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+  .item .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+          font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill.ok { color: #2EE6A6; background: rgba(46, 230, 166, .12); }
+  .pill.warn { color: #FFB938; background: rgba(255, 185, 56, .12); }
+  .pill.bad { color: #FF4D6D; background: rgba(255, 77, 109, .12); }
+  .pill.muted { color: var(--muted); background: rgba(157, 155, 199, .12); }
+  .empty { color: var(--muted); padding: 28px 8px; text-align: center; }
+
+  .detail .card { margin-top: 0; }
+  .detail h2 { margin: 0 0 6px; font-size: 20px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0; }
+  .meta-grid > div { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--border); }
+  .meta-grid small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 2px; }
+  .chat { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 16px;
+          border: 1px solid var(--border); max-height: 520px; overflow-y: auto; }
+  .msg { max-width: 78%; padding: 8px 12px; border-radius: 16px; font-size: 15px; white-space: pre-wrap;
+         overflow-wrap: anywhere; }
+  .msg.reported { align-self: flex-start; background: rgba(255, 77, 109, .10); border: 1px solid rgba(255, 77, 109, .35); }
+  .msg.reporter { align-self: flex-end; background: rgba(99, 102, 241, .16); border: 1px solid rgba(99, 102, 241, .4); }
+  .msg.focus { box-shadow: 0 0 0 2px #FFB938; }
+  .msg .info { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;
+               font-size: 11px; color: var(--muted); }
+  .msg .deleted { font-style: italic; color: var(--muted); }
+  .msg .original { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--border); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  textarea { width: 100%; min-height: 70px; padding: 10px 12px; border-radius: 12px; resize: vertical;
+             border: 1px solid var(--border); background: rgba(0, 0, 0, .15); color: var(--text); font: inherit; }
+  .banner { padding: 12px 14px; border-radius: 12px; margin: 12px 0; font-size: 14px; }
+  .banner.warn { background: rgba(255, 185, 56, .1); border: 1px solid rgba(255, 185, 56, .35); }
+  .banner.ok { background: rgba(46, 230, 166, .08); border: 1px solid rgba(46, 230, 166, .3); }
+  .banner.bad { background: rgba(255, 77, 109, .1); border: 1px solid rgba(255, 77, 109, .4); }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+           transform: translateX(-50%); padding: 10px 16px; border-radius: 12px; z-index: 50;
+           background: #1F1E42; color: #F3F1FF; border: 1px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="index.html"><img src="logo.svg" alt=""><span>DuoPact · Modération</span></a>
+    <div class="nav">
+      <span class="who" id="who"></span>
+      <button class="btn small" id="signOut" hidden>Se déconnecter</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Connexion -->
+  <section class="center" id="loginView" hidden>
+    <div class="card">
+      <h2>Espace de modération</h2>
+      <p class="muted">Réservé à l'éditeur de DuoPact. Connecte-toi avec ton compte Google.</p>
+      <button class="btn primary" id="signIn">Se connecter avec Google</button>
+      <p class="muted" id="loginError" hidden></p>
+    </div>
+  </section>
+
+  <!-- Chargement -->
+  <section class="center" id="loadingView"><p class="muted">Chargement…</p></section>
+
+  <!-- Tableau de bord -->
+  <section id="dashView" hidden>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="open" aria-selected="true">À traiter<span class="count" id="openCount" hidden></span></button>
+      <button class="tab" role="tab" data-tab="closed">Traités</button>
+      <button class="tab" role="tab" data-tab="banned">Suspensions</button>
+    </div>
+
+    <div class="layout" id="reportsLayout">
+      <div class="list" id="reportList"></div>
+      <div class="detail" id="detail"><div class="card empty">Choisis un signalement.</div></div>
+    </div>
+
+    <div id="bannedView" hidden>
+      <div class="list" id="bannedList"></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, connectAuthEmulator,
+  signInWithCredential
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import {
+  getFirestore, connectFirestoreEmulator, collection, doc, getDoc, getDocs, query, where,
+  onSnapshot, updateDoc, setDoc, deleteDoc, serverTimestamp, Timestamp, writeBatch
+} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+// Configuration publique du projet Firebase (pas un secret : la sécurité vient des règles).
+const firebaseConfig = {
+  apiKey: 'AIzaSyDBZ7jSktZSLXx1DzPxRJE2jPN7VjDP-vg',
+  authDomain: 'focus-duo-aa16a.firebaseapp.com',
+  projectId: 'focus-duo-aa16a',
+};
+const ADMIN_EMAIL = 'squalli.yassine.dev@gmail.com';
+const params = new URLSearchParams(location.search);
+const EMULATOR = params.has('emulator'); // tests locaux uniquement (émulateur sur 127.0.0.1)
+
+const app = initializeApp(EMULATOR ? { ...firebaseConfig, projectId: 'demo-duopact' } : firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+if (EMULATOR) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => ['loginView', 'loadingView', 'dashView'].forEach((v) => ($(v).hidden = v !== id));
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const toast = (text) => { const t = $('toast'); t.textContent = text; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => (t.hidden = true), 3200); };
+const ms = (v) => (v?.toMillis ? v.toMillis() : typeof v === 'number' ? v : 0);
+const fmt = (v) => { const t = ms(v); return t ? new Date(t).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—'; };
+const DECISIONS = { dismissed: 'Classé sans suite', ban_7d: 'Suspendu 7 jours', ban_30d: 'Suspendu 30 jours', ban_forever: 'Suspendu définitivement' };
+
+// ---------------------------------------------------------------- noms d'utilisateurs (cache)
+const names = new Map();
+async function nameOf(uid) {
+  if (!uid) return '?';
+  if (!names.has(uid)) {
+    names.set(uid, getDoc(doc(db, 'users', uid)).then((d) => d.data()?.username || uid.slice(0, 8)).catch(() => uid.slice(0, 8)));
+  }
+  return names.get(uid);
+}
+
+// ---------------------------------------------------------------- connexion
+$('signIn').onclick = async () => {
+  $('loginError').hidden = true;
+  try {
+    if (EMULATOR) {
+      await signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub: 'admin', email: ADMIN_EMAIL, email_verified: true })));
+    } else {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ login_hint: ADMIN_EMAIL, prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+    }
+  } catch (e) {
+    $('loginError').textContent = 'Connexion impossible : ' + (e.code || e.message);
+    $('loginError').hidden = false;
+  }
+};
+$('signOut').onclick = () => signOut(auth);
+
+let unsubscribe = [];
+onAuthStateChanged(auth, (user) => {
+  unsubscribe.forEach((u) => u()); unsubscribe = [];
+  $('signOut').hidden = !user;
+  $('who').textContent = user ? user.email : '';
+  if (!user) return show('loginView');
+  const isGoogle = user.providerData.some((p) => p.providerId === 'google.com');
+  if (user.email !== ADMIN_EMAIL || !user.emailVerified || !isGoogle) {
+    // Le serveur refuserait de toute façon : on l'explique et on déconnecte.
+    $('loginError').textContent = `Le compte ${user.email || ''} n'a pas accès à la modération.`;
+    $('loginError').hidden = false;
+    signOut(auth);
+    return;
+  }
+  show('dashView');
+  startDashboard();
+  if (EMULATOR && params.get('select')) setTimeout(() => {
+    const r = reports.find((x) => x.id === params.get('select'));
+    if (r) { selected = r.id; renderList(); renderDetail(r); }
+  }, 1500);
+});
+// Tests locaux : connexion automatique à l'émulateur.
+if (EMULATOR && params.has('autologin')) onAuthStateChanged(auth, (u) => { if (!u) $('signIn').click(); });
+
+// ---------------------------------------------------------------- données en direct
+let reports = [];      // tous les signalements (ouverts + traités)
+let banned = new Map(); // uid -> données de suspension
+let tab = 'open';
+let selected = null;
+
+function startDashboard() {
+  unsubscribe.push(onSnapshot(collection(db, 'reports'), (snap) => {
+    reports = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(b.createdAt) - ms(a.createdAt));
+    const open = reports.filter((r) => r.status === 'open').length;
+    $('openCount').textContent = open; $('openCount').hidden = open === 0;
+    document.title = (open ? `(${open}) ` : '') + 'DuoPact — Modération';
+    renderList();
+    if (selected) renderDetail(reports.find((r) => r.id === selected));
+  }, (e) => toast('Lecture refusée : ' + e.code)));
+  unsubscribe.push(onSnapshot(collection(db, 'banned'), (snap) => {
+    banned = new Map(snap.docs.map((d) => [d.id, d.data()]));
+    if (tab === 'banned') renderBanned();
+    if (selected) renderDetail(reports.find((r) => r.id === selected));
+  }));
+}
+
+document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => {
+  tab = t.dataset.tab;
+  document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', x === t));
+  $('reportsLayout').hidden = tab === 'banned';
+  $('bannedView').hidden = tab !== 'banned';
+  selected = null;
+  $('detail').replaceChildren(el('div', 'card empty', 'Choisis un signalement.'));
+  tab === 'banned' ? renderBanned() : renderList();
+}));
+
+function banState(uid) {
+  const b = banned.get(uid);
+  if (!b) return null;
+  if (b.until && ms(b.until) < Date.now()) return null; // expirée
+  return b;
+}
+
+// ---------------------------------------------------------------- liste
+async function renderList() {
+  if (tab === 'banned') return;
+  const items = reports.filter((r) => (tab === 'open' ? r.status === 'open' : r.status !== 'open'));
+  const list = $('reportList');
+  if (!items.length) return list.replaceChildren(el('div', 'card empty', tab === 'open' ? 'Aucun signalement à traiter.' : 'Aucun signalement traité.'));
+  const nodes = await Promise.all(items.map(async (r) => {
+    const b = el('button', 'item');
+    if (r.id === selected) b.setAttribute('aria-current', 'true');
+    const top = el('div', 'top');
+    top.append(el('span', null, r.reason || 'Signalement'));
+    top.append(r.status === 'open' ? el('span', 'pill warn', 'À traiter') : el('span', 'pill muted', DECISIONS[r.decision] || 'Traité'));
+    b.append(top);
+    b.append(el('div', 'sub', `${await nameOf(r.reporterUid)} signale ${await nameOf(r.reportedUid)} · ${fmt(r.createdAt)}`));
+    b.onclick = () => { selected = r.id; renderList(); renderDetail(r); };
+    return b;
+  }));
+  list.replaceChildren(...nodes);
+}
+
+// ---------------------------------------------------------------- détail
+async function renderDetail(r) {
+  const box = $('detail');
+  if (!r) return box.replaceChildren(el('div', 'card empty', 'Choisis un signalement.'));
+  const [reporter, reported] = await Promise.all([nameOf(r.reporterUid), nameOf(r.reportedUid)]);
+  const card = el('div', 'card');
+  card.append(el('h2', null, r.reason || 'Signalement'));
+  card.append(el('p', 'muted', `Référence ${r.id} · ${fmt(r.createdAt)}`));
+
+  const grid = el('div', 'meta-grid');
+  const cell = (label, value, extra) => { const d = el('div'); d.append(el('small', null, label), el('div', null, value)); if (extra) d.append(extra); return d; };
+  const history = reports.filter((x) => x.reportedUid === r.reportedUid);
+  const ban = banState(r.reportedUid);
+  grid.append(cell('Personne signalée', reported, ban ? el('span', 'pill bad', ban.until ? `Suspendu jusqu'au ${fmt(ban.until)}` : 'Suspendu définitivement') : null));
+  grid.append(cell('Signalé par', reporter));
+  grid.append(cell('Historique', `${history.length} signalement(s) contre ${reported}`));
+  card.append(grid);
+  if (r.details) { card.append(el('small', 'muted', 'Précisions'), el('p', null, r.details)); }
+
+  // Vérification de la copie avec la conversation réelle (si le duo existe encore).
+  const banner = el('div', 'banner warn', 'Vérification de la conversation…');
+  card.append(banner);
+  const chat = el('div', 'chat');
+  card.append(chat);
+
+  // Décision
+  if (r.status === 'open') {
+    const note = el('textarea'); note.placeholder = 'Note sur ta décision (facultatif)';
+    card.append(el('h3', null, 'Décision'), note);
+    const actions = el('div', 'actions');
+    const act = (label, cls, fn) => { const b = el('button', 'btn ' + cls, label); b.onclick = async () => {
+      actions.querySelectorAll('button').forEach((x) => (x.disabled = true));
+      try { await fn(note.value.trim()); toast('Décision enregistrée.'); }
+      catch (e) { toast('Échec : ' + (e.code || e.message)); actions.querySelectorAll('button').forEach((x) => (x.disabled = false)); }
+    }; actions.append(b); };
+    act('Classer sans suite', '', (n) => decide(r, 'dismissed', n, null));
+    act('Suspendre 7 jours', 'danger', (n) => decide(r, 'ban_7d', n, 7));
+    act('Suspendre 30 jours', 'danger', (n) => decide(r, 'ban_30d', n, 30));
+    act('Suspendre définitivement', 'danger', (n) => decide(r, 'ban_forever', n, Infinity));
+    card.append(actions);
+  } else {
+    card.append(el('div', 'banner ok', `${DECISIONS[r.decision] || 'Traité'} · ${fmt(r.decidedAt)}${r.note ? ' · ' + r.note : ''}`));
+    const actions = el('div', 'actions');
+    const reopen = el('button', 'btn small', 'Rouvrir');
+    reopen.onclick = () => updateDoc(doc(db, 'reports', r.id), { status: 'open' }).catch((e) => toast(e.code));
+    actions.append(reopen);
+    if (ban) {
+      const lift = el('button', 'btn small', 'Lever la suspension');
+      lift.onclick = () => deleteDoc(doc(db, 'banned', r.reportedUid)).then(() => toast('Suspension levée.')).catch((e) => toast(e.code));
+      actions.append(lift);
+    }
+    card.append(actions);
+  }
+  box.replaceChildren(card);
+
+  // Conversation + comparaison avec l'original.
+  const msgs = r.messages || [];
+  if (!msgs.length) { chat.append(el('div', 'empty', 'Aucun message joint.')); }
+  let same = 0, diff = 0, gone = 0;
+  const pairAlive = r.pairId ? (await getDoc(doc(db, 'pairs', r.pairId)).catch(() => null))?.exists() : false;
+  for (const m of msgs) {
+    const fromReported = m.senderUid === r.reportedUid;
+    const bubble = el('div', 'msg ' + (fromReported ? 'reported' : 'reporter') + (m.id === r.focusMessageId ? ' focus' : ''));
+    let original = null, status = 'introuvable';
+    if (pairAlive && m.id) {
+      const live = await getDoc(doc(db, 'pairs', r.pairId, 'messages', m.id)).catch(() => null);
+      if (live?.exists()) {
+        const data = live.data();
+        if (data.deleted) {
+          const arc = await getDoc(doc(db, 'pairs', r.pairId, 'messageArchive', m.id)).catch(() => null);
+          original = arc?.data()?.text ?? null;
+          status = !m.deleted || original != null ? 'conforme' : 'introuvable';
+          if (!m.deleted && original != null && original !== m.text) status = 'différent';
+        } else {
+          status = data.text === m.text ? 'conforme' : 'différent';
+        }
+      }
+    }
+    if (status === 'conforme') same++; else if (status === 'différent') diff++; else gone++;
+
+    if (m.deleted) {
+      bubble.append(el('span', 'deleted', 'Message supprimé par son auteur'));
+      if (original != null) { const o = el('span', 'original', original); bubble.append(o); }
+    } else {
+      bubble.append(document.createTextNode(m.text || ''));
+    }
+    const info = el('div', 'info');
+    info.append(el('span', null, `${fromReported ? reported : reporter} · ${fmt(m.createdAt)}`));
+    info.append(el('span', 'pill ' + (status === 'conforme' ? 'ok' : status === 'différent' ? 'bad' : 'muted'), status));
+    if (m.id === r.focusMessageId) info.append(el('span', 'pill warn', 'Message signalé'));
+    bubble.append(info);
+    chat.append(bubble);
+  }
+  chat.scrollTop = chat.scrollHeight;
+  if (!pairAlive) {
+    banner.className = 'banner warn';
+    banner.textContent = 'Le duo n\'existe plus : la copie ne peut pas être comparée à l\'original. Elle reste la seule trace.';
+  } else if (diff) {
+    banner.className = 'banner bad';
+    banner.textContent = `Attention : ${diff} message(s) diffèrent de la conversation réelle. La copie a peut-être été modifiée.`;
+  } else {
+    banner.className = 'banner ok';
+    banner.textContent = `Copie vérifiée : ${same} message(s) conformes à la conversation réelle` + (gone ? `, ${gone} introuvable(s).` : '.');
+  }
+}
+
+async function decide(r, decision, note, days) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'reports', r.id), { status: 'closed', decision, note, decidedAt: serverTimestamp() });
+  if (days) {
+    batch.set(doc(db, 'banned', r.reportedUid), {
+      reason: (r.reason || 'Signalement') + (note ? ' — ' + note : ''),
+      at: serverTimestamp(),
+      until: days === Infinity ? null : Timestamp.fromMillis(Date.now() + days * 86400e3),
+      reportId: r.id,
+      by: ADMIN_EMAIL,
+    });
+  }
+  await batch.commit();
+}
+
+// ---------------------------------------------------------------- suspensions
+async function renderBanned() {
+  const list = $('bannedList');
+  const entries = [...banned.entries()];
+  if (!entries.length) return list.replaceChildren(el('div', 'card empty', 'Aucune suspension.'));
+  const nodes = await Promise.all(entries.map(async ([uid, b]) => {
+    const card = el('div', 'card');
+    const expired = b.until && ms(b.until) < Date.now();
+    const top = el('div', 'item top'); top.style.cursor = 'default';
+    card.append(el('h2', null, await nameOf(uid)));
+    card.append(el('p', null, b.reason || ''));
+    card.append(el('span', 'pill ' + (expired ? 'muted' : 'bad'),
+      expired ? `Expirée depuis le ${fmt(b.until)}` : b.until ? `Jusqu'au ${fmt(b.until)}` : 'Définitive'));
+    card.append(el('p', 'muted', `Depuis le ${fmt(b.at)}${b.reportId ? ' · signalement ' + b.reportId : ''}`));
+    const lift = el('button', 'btn small', expired ? 'Effacer' : 'Lever la suspension');
+    lift.onclick = () => deleteDoc(doc(db, 'banned', uid)).then(() => toast('Suspension levée.')).catch((e) => toast(e.code));
+    card.append(el('div', 'actions'));
+    card.lastChild.append(lift);
+    return card;
+  }));
+  list.replaceChildren(...nodes);
+}
+</script>
+</body>
+</html>
