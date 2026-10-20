@@ -15,13 +15,14 @@
     <a class="brand" href="index.html"><img src="logo.svg" alt=""><span>DuoPact</span></a>
     <nav class="nav" aria-label="Pages">
       <a href="privacy-policy.html" aria-current="page">Confidentialité</a>
+      <a href="terms.html">Conditions d'utilisation</a>
       <a href="delete-account.html">Supprimer mon compte</a>
     </nav>
   </div>
 </header>
 <main>
 <section class="hero">
-  <div class="badge">Dernière mise à jour : 18 octobre 2026</div>
+  <div class="badge">Dernière mise à jour : 19 octobre 2026</div>
   <h1>Politique de confidentialité</h1>
   <p class="lead">DuoPact est une application de concentration à deux : toi et un ami fixez ensemble des limites de temps sur certaines applications, et l'application bloque ces applications une fois la limite atteinte, sauf si ton ami donne son accord. Cette page explique quelles données sont utilisées et pourquoi.</p>
 </section>
@@ -34,16 +35,17 @@
 
 <section class="card">
   <h2><span class="num">1</span>Qui est responsable ?</h2>
-  <p>Squalli Kadimi Yassine — contact : <a href="mailto:squalli.yassine.dev@gmail.com">squalli.yassine.dev@gmail.com</a></p>
+  <p>Squalli Kadimi Yassine, éditeur de DuoPact (développeur indépendant). Contact : <a href="mailto:squalli.yassine.dev@gmail.com">squalli.yassine.dev@gmail.com</a></p>
 </section>
 
 <section class="card">
   <h2><span class="num">2</span>Données que DuoPact utilise</h2>
   <ul>
     <li><strong>Compte</strong> : le nom d'utilisateur que tu choisis et un mot de passe. Le mot de passe est géré par Firebase Authentication (Google) ; DuoPact n'y a pas accès en clair. Un identifiant technique de compte est créé.</li>
+    <li><strong>Liste des applications installées</strong> : lue <em>uniquement sur ton téléphone</em>, pour te permettre de choisir les applications à limiter. Seules les applications que tu choisis sont enregistrées (nom et identifiant de l'application).</li>
     <li><strong>Temps d'utilisation</strong> : le nombre de minutes passées dans la journée sur <em>les applications que toi et ton ami avez soumises au pacte</em>. Pas les autres applications.</li>
     <li><strong>État de la protection</strong> : indique si le blocage est actif sur ton téléphone, et l'heure de la dernière synchronisation.</li>
-    <li><strong>Pacte</strong> : les applications choisies, les limites de temps négociées et les demandes de déblocage (application concernée, statut, horodatage, et la <strong>raison</strong> que tu choisis ou écris pour justifier ta demande, 200 caractères au plus).</li>
+    <li><strong>Pacte</strong> : les applications choisies, les durées proposées et acceptées pendant la négociation, et les demandes de déblocage (application concernée, statut, horodatage, et la <strong>raison</strong> que tu choisis ou écris pour justifier ta demande, 200 caractères au plus).</li>
     <li><strong>Messages</strong> : les messages que tu envoies à ton ami dans l'onglet Messages (texte, auteur, date d'envoi). Ils ne sont lisibles que par les membres de ton duo.</li>
     <li><strong>Réglage de l'heure</strong> : si l'heure du téléphone est réglée automatiquement ou manuellement, la date et l'ampleur d'un changement manuel d'heure ou de fuseau horaire, et l'écart avec l'heure du serveur. Ces informations servent uniquement à empêcher le contournement des limites en changeant l'heure.</li>
     <li><strong>Duo</strong> : un code d'invitation temporaire (valable 24 h) et le lien entre toi et ton ami.</li>
@@ -51,48 +53,60 @@
 </section>
 
 <section class="card">
-  <h2><span class="num">3</span>Ce que DuoPact ne fait pas</h2>
+  <h2><span class="num">3</span>Pourquoi ces données sont utilisées (base légale)</h2>
+  <p>Ces données servent uniquement à fournir le service que tu demandes en créant un compte et en formant un duo : mesurer le temps passé, appliquer les limites décidées à deux, transmettre les demandes de déblocage et les messages, et empêcher le contournement du pacte. Le traitement repose sur l'exécution de ce service (les conditions d'utilisation que tu acceptes). Tu peux y mettre fin à tout moment en supprimant ton compte.</p>
+</section>
+
+<section class="card">
+  <h2><span class="num">4</span>Ce que DuoPact ne fait pas</h2>
   <ul>
     <li>DuoPact <strong>ne lit pas le contenu de ton écran</strong> ni ce que tu écris dans les autres applications (messages, mots de passe, photos…). Seuls les messages que tu écris <em>dans DuoPact</em>, à ton ami, sont enregistrés.</li>
     <li>Aucune publicité, aucun outil d'analyse ou de pistage tiers, aucune vente ni location de données.</li>
+    <li>Aucune surveillance cachée : DuoPact ne fonctionne que si les deux personnes l'installent et l'activent elles-mêmes, et une notification permanente indique qu'il est actif.</li>
   </ul>
 </section>
 
 <section class="card">
-  <h2><span class="num">4</span>Permissions Android sensibles</h2>
+  <h2><span class="num">5</span>Permissions Android sensibles</h2>
   <ul>
     <li><strong>Service d'accessibilité</strong> : utilisé uniquement pour détecter quelle application passe au premier plan et afficher l'écran de blocage / te renvoyer à l'accueil. Il ne lit pas le contenu des applications. Tu l'actives toi-même et peux le désactiver à tout moment dans les réglages Android ; ton ami verra alors que ta protection est coupée.</li>
     <li><strong>Accès aux statistiques d'utilisation</strong> : pour mesurer le temps passé sur chaque application.</li>
-    <li><strong>Notifications et service au premier plan</strong> : pour te prévenir d'une demande de ton ami et garder le suivi actif.</li>
+    <li><strong>Notifications et service au premier plan</strong> : pour te prévenir d'une demande ou d'un message de ton ami et garder le suivi actif.</li>
   </ul>
 </section>
 
 <section class="card">
-  <h2><span class="num">5</span>Avec qui les données sont partagées</h2>
+  <h2><span class="num">6</span>Avec qui les données sont partagées</h2>
   <ul>
-    <li><strong>Ton ami (l'autre membre du duo)</strong> voit : ton nom d'utilisateur, ton temps d'utilisation des applications du pacte, l'état de ta protection, tes demandes de déblocage avec leur raison, tes messages, et le fait que l'heure de ton téléphone a été modifiée.</li>
+    <li><strong>Ton ami (l'autre membre du duo)</strong> voit : ton nom d'utilisateur, les applications du pacte et ton temps d'utilisation de ces applications, l'état de ta protection, tes propositions de durée, tes demandes de déblocage avec leur raison, tes messages, et le fait que l'heure de ton téléphone a été modifiée.</li>
     <li><strong>Google (Firebase Authentication et Cloud Firestore)</strong> héberge les données en tant que sous-traitant technique. Les échanges sont chiffrés en transit.</li>
     <li>Aucun autre destinataire.</li>
   </ul>
 </section>
 
 <section class="card">
-  <h2><span class="num">6</span>Durée de conservation et suppression</h2>
-  <p>Les données sont conservées tant que ton compte existe. Tu peux le supprimer à tout moment depuis l'application (<em>Mon duo › Supprimer mon compte</em>, ou depuis l'écran de liaison). La suppression efface ton compte, ton profil, tes données d'usage, tes demandes, les messages du duo et ton duo. <strong>Le duo est dissous pour ton ami aussi</strong> : le pacte prend fin. Tu peux aussi demander la suppression par email, voir <a href="delete-account.html">la page de suppression</a>.</p>
+  <h2><span class="num">7</span>Où sont stockées les données</h2>
+  <p>Les données sont hébergées par Google (Firebase). Elles peuvent être stockées ou traitées en dehors de l'Union européenne, notamment aux États-Unis. Ces transferts sont encadrés par les garanties prévues par Google pour ses services Firebase (clauses contractuelles types de la Commission européenne et, le cas échéant, le cadre de protection des données UE–États-Unis).</p>
 </section>
 
 <section class="card">
-  <h2><span class="num">7</span>Âge</h2>
-  <p>DuoPact s'adresse aux personnes de 13 ans et plus.</p>
+  <h2><span class="num">8</span>Durée de conservation et suppression</h2>
+  <p>Les données sont conservées tant que ton compte existe. Tu peux le supprimer à tout moment depuis l'application (<em>Mon duo › Supprimer mon compte</em>, ou depuis l'écran de liaison). La suppression efface ton compte, ton profil, tes données d'usage, tes demandes, les messages du duo et ton duo. <strong>Le duo est dissous pour ton ami aussi</strong> : le pacte prend fin. Tu peux aussi demander la suppression par email, voir <a href="delete-account.html">la page de suppression</a>. Un duo peut aussi prendre fin si l'un des deux reste sans activité pendant au moins 48 heures ; son contenu est alors effacé.</p>
 </section>
 
 <section class="card">
-  <h2><span class="num">8</span>Tes droits</h2>
-  <p>Tu peux demander l'accès, la rectification ou la suppression de tes données en écrivant à <a href="mailto:squalli.yassine.dev@gmail.com">squalli.yassine.dev@gmail.com</a>.</p>
+  <h2><span class="num">9</span>Âge</h2>
+  <p>DuoPact s'adresse aux personnes de <strong>16 ans et plus</strong>. Si tu as moins de 16 ans, n'utilise pas l'application. Si nous apprenons qu'un compte appartient à une personne de moins de 16 ans, il sera supprimé.</p>
 </section>
 
 <section class="card">
-  <h2><span class="num">9</span>Modifications</h2>
+  <h2><span class="num">10</span>Tes droits</h2>
+  <p>Tu peux demander l'accès à tes données, leur rectification, leur suppression, leur portabilité, ou t'opposer à leur traitement, en écrivant à <a href="mailto:squalli.yassine.dev@gmail.com">squalli.yassine.dev@gmail.com</a>. Une réponse t'est apportée dans un délai d'un mois.</p>
+  <p>Si tu estimes que tes droits ne sont pas respectés, tu peux déposer une réclamation auprès de l'autorité de protection des données de ton pays (par exemple la CNIL en France, la CNDP au Maroc).</p>
+</section>
+
+<section class="card">
+  <h2><span class="num">11</span>Modifications</h2>
   <p>En cas de changement important, cette page sera mise à jour et la date ci-dessus modifiée.</p>
 </section>
 </main>
