@@ -70,7 +70,7 @@
   .combo { font-size: 13px; font-weight: 700; color: #F472B6; }
 
   /* Vote */
-  .choice { display: block; width: 100%; text-align: right; direction: rtl; margin-top: 8px; padding: 14px 16px;
+  .choice { display: block; width: 100%; text-align: left; margin-top: 8px; padding: 14px 16px;
             border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
             font: 19px/1.5 inherit; cursor: pointer; }
   .choice:hover { border-color: #C084FC; }
@@ -177,7 +177,7 @@
   <section class="card">
     <h2>Les règles</h2>
     <ul>
-      <li>Écris en <strong>lettres arabes</strong>, sur un ton familier, comme entre potes.</li>
+      <li>Écris la darija en <strong>lettres latines</strong>, comme dans tes messages (« wach », « bghit », « 3afak »…), sur un ton familier, comme entre potes.</li>
       <li>Les mots entre <strong>{ }</strong> sont remplacés par l'application (un prénom, une durée…) : garde-les tels quels. Touche-les pour les insérer.</li>
       <li>Les boutons et titres doivent rester <strong>courts</strong>.</li>
       <li>Points : <strong>+10</strong> par traduction, <strong>+2</strong> par vote, <strong>+3</strong> chaque fois qu'on vote pour ta traduction.</li>
@@ -356,7 +356,8 @@ function renderPlay() {
   card.append(top, el('div', 'fr', s.fr));
   if (s.hint) card.append(el('div', 'hint', s.hint));
   const ta = el('textarea', 'dar');
-  ta.dir = 'rtl'; ta.lang = 'ar'; ta.placeholder = 'اكتب الترجمة بالدارجة…'; ta.maxLength = 600;
+  ta.dir = 'ltr'; ta.placeholder = 'Ktb hna trjama dyalk…'; ta.maxLength = 600;
+  ta.autocapitalize = 'sentences'; ta.spellcheck = false;
   ta.setAttribute('aria-label', 'Traduction en darija');
   card.append(ta);
   const toks = tokensOf(s.fr);
@@ -437,7 +438,6 @@ function renderVote() {
   // Ordre mélangé, sans montrer qui a écrit quoi (vote à l'aveugle).
   [...list].sort(() => Math.random() - .5).forEach((p) => {
     const b = el('button', 'choice', p.text);
-    b.lang = 'ar';
     if (p.uid === me.uid) { b.disabled = true; b.title = 'Ta traduction'; b.style.opacity = '.55'; }
     b.onclick = () => { mine.v[k] = p.uid; card.append(el('div', 'pop', '+2')); save(); renderHeader(); setTimeout(renderVote, 380); };
     card.append(b);
